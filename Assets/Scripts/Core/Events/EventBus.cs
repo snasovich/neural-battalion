@@ -23,7 +23,7 @@ namespace NeuralBattalion.Core.Events
     /// </summary>
     public static class EventBus
     {
-        private static readonly Dictionary<Type, List<Delegate>> subscribers = new();
+        private static readonly Dictionary<Type, HashSet<Delegate>> subscribers = new();
 
         /// <summary>
         /// Subscribe to an event type.
@@ -36,13 +36,10 @@ namespace NeuralBattalion.Core.Events
 
             if (!subscribers.ContainsKey(eventType))
             {
-                subscribers[eventType] = new List<Delegate>();
+                subscribers[eventType] = new HashSet<Delegate>();
             }
 
-            if (!subscribers[eventType].Contains(handler))
-            {
-                subscribers[eventType].Add(handler);
-            }
+            subscribers[eventType].Add(handler);
         }
 
         /// <summary>

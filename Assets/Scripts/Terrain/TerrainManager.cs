@@ -193,10 +193,17 @@ namespace NeuralBattalion.Terrain
 
             SetTile(gridPos, TileType.Empty);
 
+            // Map TileType to TileDestroyedType for the event
+            TileDestroyedType destroyedType = previousType switch
+            {
+                TileType.Steel => TileDestroyedType.Steel,
+                _ => TileDestroyedType.Brick
+            };
+
             EventBus.Publish(new TerrainDestroyedEvent
             {
                 GridPosition = gridPos,
-                TileType = previousType == TileType.Steel ? TileDestroyedType.Steel : TileDestroyedType.Brick
+                TileType = destroyedType
             });
         }
 

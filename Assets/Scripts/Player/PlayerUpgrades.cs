@@ -39,6 +39,11 @@ namespace NeuralBattalion.Player
         public bool HasSpeedBoost { get; private set; }
         public bool HasFireRateBoost { get; private set; }
 
+        // Coroutine references for proper stopping
+        private Coroutine speedBoostCoroutine;
+        private Coroutine fireRateBoostCoroutine;
+        private Coroutine shieldCoroutine;
+
         private void Awake()
         {
             if (playerController == null)
@@ -146,13 +151,12 @@ namespace NeuralBattalion.Player
         /// </summary>
         private void ApplySpeedBoost()
         {
-            if (HasSpeedBoost)
+            if (speedBoostCoroutine != null)
             {
-                // Refresh duration
-                StopCoroutine(nameof(SpeedBoostCoroutine));
+                StopCoroutine(speedBoostCoroutine);
             }
 
-            StartCoroutine(SpeedBoostCoroutine());
+            speedBoostCoroutine = StartCoroutine(SpeedBoostCoroutine());
         }
 
         private System.Collections.IEnumerator SpeedBoostCoroutine()
@@ -161,6 +165,7 @@ namespace NeuralBattalion.Player
             playerController?.ApplySpeedBoost(speedBoostMultiplier, speedBoostDuration);
             yield return new WaitForSeconds(speedBoostDuration);
             HasSpeedBoost = false;
+            speedBoostCoroutine = null;
         }
 
         /// <summary>
@@ -168,12 +173,12 @@ namespace NeuralBattalion.Player
         /// </summary>
         private void ApplyFireRateBoost()
         {
-            if (HasFireRateBoost)
+            if (fireRateBoostCoroutine != null)
             {
-                StopCoroutine(nameof(FireRateBoostCoroutine));
+                StopCoroutine(fireRateBoostCoroutine);
             }
 
-            StartCoroutine(FireRateBoostCoroutine());
+            fireRateBoostCoroutine = StartCoroutine(FireRateBoostCoroutine());
         }
 
         private System.Collections.IEnumerator FireRateBoostCoroutine()
@@ -182,6 +187,7 @@ namespace NeuralBattalion.Player
             playerController?.ApplyFireRateBoost(fireRateBoostMultiplier, fireRateBoostDuration);
             yield return new WaitForSeconds(fireRateBoostDuration);
             HasFireRateBoost = false;
+            fireRateBoostCoroutine = null;
         }
 
         /// <summary>
@@ -189,12 +195,12 @@ namespace NeuralBattalion.Player
         /// </summary>
         private void ApplyShield()
         {
-            if (HasShield)
+            if (shieldCoroutine != null)
             {
-                StopCoroutine(nameof(ShieldCoroutine));
+                StopCoroutine(shieldCoroutine);
             }
 
-            StartCoroutine(ShieldCoroutine());
+            shieldCoroutine = StartCoroutine(ShieldCoroutine());
         }
 
         private System.Collections.IEnumerator ShieldCoroutine()
@@ -203,6 +209,7 @@ namespace NeuralBattalion.Player
             playerController?.ApplyShield(shieldDuration);
             yield return new WaitForSeconds(shieldDuration);
             HasShield = false;
+            shieldCoroutine = null;
         }
 
         /// <summary>

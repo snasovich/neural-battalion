@@ -92,6 +92,7 @@ namespace NeuralBattalion.Combat
 
                 projectile.Fire(position, direction, isPlayer, speed, damage);
                 projectile.SetCanDestroySteel(canDestroySteel);
+                projectile.SetOwnerWeapon(this);
             }
 
             // Update state
@@ -110,8 +111,12 @@ namespace NeuralBattalion.Combat
         private GameObject GetProjectile(Vector2 position)
         {
             // Try to get from object pool
-            // var projectile = ObjectPool.Instance?.Get(projectilePrefab);
-            // if (projectile != null) return projectile;
+            var pool = ObjectPool.Instance;
+            if (pool != null && projectilePrefab != null)
+            {
+                var pooledProjectile = pool.Get(projectilePrefab);
+                if (pooledProjectile != null) return pooledProjectile;
+            }
 
             // Fallback: instantiate
             if (projectilePrefab == null)
@@ -124,7 +129,7 @@ namespace NeuralBattalion.Combat
         }
 
         /// <summary>
-        /// Called when a projectile is destroyed (for tracking).
+        /// Called when a projectile is destroyed (for tracking active projectile count).
         /// </summary>
         public void OnProjectileDestroyed()
         {

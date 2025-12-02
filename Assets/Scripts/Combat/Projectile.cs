@@ -33,6 +33,7 @@ namespace NeuralBattalion.Combat
         private bool isPlayerProjectile;
         private bool hasHit = false;
         private float spawnTime;
+        private Weapon ownerWeapon;
 
         public bool IsPlayerProjectile => isPlayerProjectile;
         public int Damage => damage;
@@ -214,14 +215,25 @@ namespace NeuralBattalion.Combat
         /// </summary>
         public void Despawn()
         {
+            if (hasHit) return;
+
             hasHit = true;
             gameObject.SetActive(false);
 
-            // Return to pool if using object pooling
-            // ObjectPool.Instance?.Return(gameObject);
+            // Notify owner weapon
+            ownerWeapon?.OnProjectileDestroyed();
+            ownerWeapon = null;
 
-            // Or destroy if not pooling
-            // Destroy(gameObject);
+            // Try to return to pool first, otherwise destroy
+            var pool = ObjectPool.Instance;
+            if (pool != null)
+            {
+                pool.Return(gameObject);
+            }
+            else
+            {
+                Destroy(gameObject);
+            }
         }
 
         /// <summary>
@@ -230,6 +242,15 @@ namespace NeuralBattalion.Combat
         public void SetCanDestroySteel(bool canDestroy)
         {
             canDestroySteel = canDestroy;
+        }
+
+        /// <summary>
+        /// Set the weapon that fired this projectile.
+        /// Used to notify when projectile is destroyed for tracking.
+        /// </summary>
+        public void SetOwnerWeapon(Weapon weapon)
+        {
+            ownerWeapon = weapon;
         }
     }
 }
