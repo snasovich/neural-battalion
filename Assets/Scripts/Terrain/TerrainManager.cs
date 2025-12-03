@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.Tilemaps;
 using NeuralBattalion.Data;
 using NeuralBattalion.Core.Events;
+using NeuralBattalion.Utility;
 
 namespace NeuralBattalion.Terrain
 {
@@ -364,49 +365,55 @@ namespace NeuralBattalion.Terrain
 
         /// <summary>
         /// Create simple fallback tiles if tile assets are not assigned.
-        /// This creates basic colored tiles using Unity's built-in Tile class.
+        /// This creates basic colored tiles using generated sprites.
         /// </summary>
         private void CreateFallbackTilesIfNeeded()
         {
             if (brickTile == null)
             {
-                brickTile = UnityEngine.Tilemaps.Tile.CreateInstance<UnityEngine.Tilemaps.Tile>();
-                ((UnityEngine.Tilemaps.Tile)brickTile).color = new Color(0.8f, 0.4f, 0.2f); // Orange-brown
+                Tile tile = ScriptableObject.CreateInstance<Tile>();
+                tile.sprite = SpriteGenerator.CreateColoredSprite(new Color(0.8f, 0.4f, 0.2f), 16, 16, 16f); // Orange-brown
+                brickTile = tile;
                 Debug.Log("[TerrainManager] Created fallback brick tile");
             }
 
             if (steelTile == null)
             {
-                steelTile = UnityEngine.Tilemaps.Tile.CreateInstance<UnityEngine.Tilemaps.Tile>();
-                ((UnityEngine.Tilemaps.Tile)steelTile).color = new Color(0.7f, 0.7f, 0.7f); // Gray
+                Tile tile = ScriptableObject.CreateInstance<Tile>();
+                tile.sprite = SpriteGenerator.CreateColoredSprite(new Color(0.7f, 0.7f, 0.7f), 16, 16, 16f); // Gray
+                steelTile = tile;
                 Debug.Log("[TerrainManager] Created fallback steel tile");
             }
 
             if (waterTile == null)
             {
-                waterTile = UnityEngine.Tilemaps.Tile.CreateInstance<UnityEngine.Tilemaps.Tile>();
-                ((UnityEngine.Tilemaps.Tile)waterTile).color = new Color(0.2f, 0.4f, 0.8f); // Blue
+                Tile tile = ScriptableObject.CreateInstance<Tile>();
+                tile.sprite = SpriteGenerator.CreateColoredSprite(new Color(0.2f, 0.4f, 0.8f), 16, 16, 16f); // Blue
+                waterTile = tile;
                 Debug.Log("[TerrainManager] Created fallback water tile");
             }
 
             if (treeTile == null)
             {
-                treeTile = UnityEngine.Tilemaps.Tile.CreateInstance<UnityEngine.Tilemaps.Tile>();
-                ((UnityEngine.Tilemaps.Tile)treeTile).color = new Color(0.2f, 0.6f, 0.2f); // Green
+                Tile tile = ScriptableObject.CreateInstance<Tile>();
+                tile.sprite = SpriteGenerator.CreateColoredSprite(new Color(0.2f, 0.6f, 0.2f), 16, 16, 16f); // Green
+                treeTile = tile;
                 Debug.Log("[TerrainManager] Created fallback tree tile");
             }
 
             if (iceTile == null)
             {
-                iceTile = UnityEngine.Tilemaps.Tile.CreateInstance<UnityEngine.Tilemaps.Tile>();
-                ((UnityEngine.Tilemaps.Tile)iceTile).color = new Color(0.7f, 0.9f, 1.0f); // Light blue
+                Tile tile = ScriptableObject.CreateInstance<Tile>();
+                tile.sprite = SpriteGenerator.CreateColoredSprite(new Color(0.7f, 0.9f, 1.0f), 16, 16, 16f); // Light blue
+                iceTile = tile;
                 Debug.Log("[TerrainManager] Created fallback ice tile");
             }
 
             if (groundTile == null)
             {
-                groundTile = UnityEngine.Tilemaps.Tile.CreateInstance<UnityEngine.Tilemaps.Tile>();
-                ((UnityEngine.Tilemaps.Tile)groundTile).color = new Color(0.2f, 0.2f, 0.2f); // Dark gray
+                Tile tile = ScriptableObject.CreateInstance<Tile>();
+                tile.sprite = SpriteGenerator.CreateColoredSprite(new Color(0.2f, 0.2f, 0.2f), 16, 16, 16f); // Dark gray
+                groundTile = tile;
                 Debug.Log("[TerrainManager] Created fallback ground tile");
             }
         }
