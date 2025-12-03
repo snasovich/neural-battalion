@@ -257,6 +257,14 @@ The `GameLoop` class orchestrates the main update cycle:
 | Fire | Space / Enter | A / X Button |
 | Pause | Escape | Start |
 
+## 🔄 CI/CD
+
+This project uses GitHub Actions for continuous integration to ensure code quality:
+
+- **Automated Builds**: Every pull request and push to main triggers a Unity build to verify compilation
+- **Build Status**: PR checks prevent merging code that breaks compilation
+- **Setup Guide**: See [.github/workflows/README.md](.github/workflows/README.md) for CI setup instructions
+
 ## 🛠️ Development Roadmap
 
 - [ ] Core game loop implementation
