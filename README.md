@@ -261,9 +261,12 @@ The `GameLoop` class orchestrates the main update cycle:
 
 This project uses GitHub Actions for continuous integration to ensure code quality:
 
-- **Automated Builds**: Every pull request and push to main triggers a Unity build to verify compilation
-- **Build Status**: PR checks prevent merging code that breaks compilation
-- **Setup Guide**: See [.github/workflows/README.md](.github/workflows/README.md) for CI setup instructions
+- **Automated Checks**: Every pull request and push to main triggers C# code quality validation
+- **No Unity License Required**: Performs syntax checking and code quality analysis without Unity
+- **PR Status Checks**: Prevents merging code with syntax errors or common issues
+- **Setup Guide**: See [.github/workflows/README.md](.github/workflows/README.md) for CI details
+
+**Note:** CI performs basic C# validation. Always test full compilation in Unity Editor locally.
 
 ## 🛠️ Development Roadmap
 

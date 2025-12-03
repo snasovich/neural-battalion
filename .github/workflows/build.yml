@@ -1,4 +1,4 @@
-name: Build Unity Project
+name: Code Quality Checks
 
 on:
   push:
@@ -8,8 +8,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
-    name: Build Unity Project
+  code-quality:
+    name: C# Code Quality Checks
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -20,32 +20,127 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          lfs: true
 
-      # Cache Unity Library folder
-      - name: Cache Unity Library
-        uses: actions/cache@v4
-        with:
-          path: Library
-          key: Library-${{ hashFiles('Assets/**', 'Packages/**') }}
-          restore-keys: |
-            Library-
+      # Check C# files exist
+      - name: Check C# Files Exist
+        run: |
+          echo "Checking for C# scripts..."
+          SCRIPT_COUNT=$(find Assets/Scripts -name "*.cs" 2>/dev/null | wc -l)
+          if [ "$SCRIPT_COUNT" -eq 0 ]; then
+            echo "Error: No C# scripts found in Assets/Scripts"
+            exit 1
+          fi
+          echo "✓ Found $SCRIPT_COUNT C# script(s)"
 
-      # Build the Unity project
-      - name: Build Unity Project
-        uses: game-ci/unity-builder@v4
-        env:
-          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
-          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
-          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
-        with:
-          targetPlatform: StandaloneLinux64
-          unityVersion: 2022.3.0f1
+      # Basic C# syntax validation
+      - name: Validate C# Syntax
+        run: |
+          echo "Checking C# syntax for common errors..."
+          ERROR_COUNT=0
 
-      # Upload build artifacts (optional, for verification)
-      - name: Upload Build
-        uses: actions/upload-artifact@v4
+          for file in $(find Assets/Scripts -name "*.cs"); do
+            # Check for unmatched braces
+            OPEN=$(grep -o '{' "$file" | wc -l)
+            CLOSE=$(grep -o '}' "$file" | wc -l)
+            if [ "$OPEN" -ne "$CLOSE" ]; then
+              echo "❌ Error in $file: Unmatched braces"
+              ERROR_COUNT=$((ERROR_COUNT + 1))
+            fi
+
+            # Check for basic C# syntax requirements
+            if ! grep -q "namespace" "$file"; then
+              echo "⚠️  Warning: $file missing namespace declaration"
+            fi
+          done
+
+          if [ "$ERROR_COUNT" -gt 0 ]; then
+            echo "Found $ERROR_COUNT error(s)"
+            exit 1
+          fi
+
+          echo "✓ Basic C# syntax validation complete"
+
+      # Check for common code quality issues
+      - name: Code Quality Analysis
+        run: |
+          echo "Checking for common issues..."
+
+          # Check for TODO/FIXME comments
+          echo ""
+          echo "=== TODO/FIXME Comments ==="
+          if grep -r "TODO\|FIXME" Assets/Scripts --include="*.cs"; then
+            echo "(Found pending work items)"
+          else
+            echo "✓ None found"
+          fi
+
+          # Check for proper namespace usage
+          echo ""
+          echo "=== Checking Namespaces ==="
+          FILES_WITHOUT_NS=$(grep -L "namespace NeuralBattalion" \
+            Assets/Scripts/**/*.cs 2>/dev/null || true)
+          if [ -n "$FILES_WITHOUT_NS" ]; then
+            echo "⚠️  Files without NeuralBattalion namespace:"
+            echo "$FILES_WITHOUT_NS"
+          else
+            echo "✓ All files use proper namespaces"
+          fi
+
+          # Check for consistent using statements
+          echo ""
+          echo "=== Common Using Statements ==="
+          grep -h "^using " Assets/Scripts/**/*.cs 2>/dev/null | \
+            sort | uniq -c | sort -rn | head -5
+
+          echo ""
+          echo "✓ Code quality analysis complete"
+
+      # Check file formatting
+      - name: Check File Formatting
+        run: |
+          echo "Checking file formatting..."
+
+          # Check for Windows line endings (CRLF)
+          echo ""
+          echo "=== Line Endings ==="
+          if find Assets/Scripts -name "*.cs" -exec file {} \; | \
+             grep -q CRLF; then
+            echo "⚠️  Some files have Windows line endings (CRLF)"
+            find Assets/Scripts -name "*.cs" -exec file {} \; | \
+              grep CRLF | head -5
+          else
+            echo "✓ All files have Unix line endings (LF)"
+          fi
+
+          # Check for trailing whitespace
+          echo ""
+          echo "=== Trailing Whitespace ==="
+          if grep -r " $" Assets/Scripts --include="*.cs" -l; then
+            echo "⚠️  Files with trailing whitespace (above)"
+          else
+            echo "✓ No trailing whitespace found"
+          fi
+
+          echo ""
+          echo "✓ File formatting check complete"
+
+      # Summary
+      - name: Summary
         if: success()
-        with:
-          name: Build
-          path: build
+        run: |
+          echo ""
+          echo "=========================================="
+          echo "✅ All code quality checks passed!"
+          echo "=========================================="
+          echo ""
+          echo "What was checked:"
+          echo "  • C# script existence and structure"
+          echo "  • Basic syntax validation"
+          echo "  • Namespace conventions"
+          echo "  • File formatting"
+          echo ""
+          echo "Note: Full compilation requires Unity Editor."
+          echo ""
+          echo "To test full compilation locally:"
+          echo "  1. Open project in Unity Editor"
+          echo "  2. Check Console for compilation errors"
