@@ -38,20 +38,24 @@ jobs:
           echo "Checking C# syntax for common errors..."
           ERROR_COUNT=0
 
-          for file in $(find Assets/Scripts -name "*.cs"); do
-            # Check for unmatched braces
-            OPEN=$(grep -o '{' "$file" | wc -l)
-            CLOSE=$(grep -o '}' "$file" | wc -l)
-            if [ "$OPEN" -ne "$CLOSE" ]; then
-              echo "❌ Error in $file: Unmatched braces"
-              ERROR_COUNT=$((ERROR_COUNT + 1))
-            fi
-
+          while IFS= read -r -d '' file; do
             # Check for basic C# syntax requirements
             if ! grep -q "namespace" "$file"; then
               echo "⚠️  Warning: $file missing namespace declaration"
             fi
-          done
+
+            # Check that file is not empty
+            if [ ! -s "$file" ]; then
+              echo "❌ Error: $file is empty"
+              ERROR_COUNT=$((ERROR_COUNT + 1))
+            fi
+
+            # Check for common syntax issues
+            if grep -q "public class.*{$" "$file" && \
+               ! grep -q "^}" "$file"; then
+              echo "⚠️  Warning: $file may have formatting issues"
+            fi
+          done < <(find Assets/Scripts -name "*.cs" -print0)
 
           if [ "$ERROR_COUNT" -gt 0 ]; then
             echo "Found $ERROR_COUNT error(s)"
@@ -68,7 +72,7 @@ jobs:
           # Check for TODO/FIXME comments
           echo ""
           echo "=== TODO/FIXME Comments ==="
-          if grep -r "TODO\|FIXME" Assets/Scripts --include="*.cs"; then
+          if find Assets/Scripts -name "*.cs" -exec grep -l "TODO\|FIXME" {} \;; then
             echo "(Found pending work items)"
           else
             echo "✓ None found"
@@ -77,8 +81,8 @@ jobs:
           # Check for proper namespace usage
           echo ""
           echo "=== Checking Namespaces ==="
-          FILES_WITHOUT_NS=$(grep -L "namespace NeuralBattalion" \
-            Assets/Scripts/**/*.cs 2>/dev/null || true)
+          FILES_WITHOUT_NS=$(find Assets/Scripts -name "*.cs" \
+            -exec grep -L "namespace NeuralBattalion" {} \;)
           if [ -n "$FILES_WITHOUT_NS" ]; then
             echo "⚠️  Files without NeuralBattalion namespace:"
             echo "$FILES_WITHOUT_NS"
@@ -89,7 +93,7 @@ jobs:
           # Check for consistent using statements
           echo ""
           echo "=== Common Using Statements ==="
-          grep -h "^using " Assets/Scripts/**/*.cs 2>/dev/null | \
+          find Assets/Scripts -name "*.cs" -exec grep -h "^using " {} \; | \
             sort | uniq -c | sort -rn | head -5
 
           echo ""

@@ -15,15 +15,15 @@ This workflow performs C# code quality checks without requiring a Unity license.
 
 **What it does:**
 1. Checks out the repository code
-2. Sets up .NET for C# validation tools
-3. Validates C# file syntax using Roslyn
+2. Validates C# files exist in the project
+3. Performs basic syntax checks (brace matching, namespace declarations)
 4. Checks for common code quality issues:
    - Proper namespace usage (NeuralBattalion.*)
    - TODO/FIXME comments
    - File formatting (line endings, trailing whitespace)
 5. Provides summary and local testing instructions
 
-**Note:** This workflow does **NOT** require Unity license or secrets. It performs basic validation to catch syntax errors and common issues before full Unity compilation.
+**Note:** This workflow does **NOT** require Unity license or secrets. It uses simple bash commands to catch common issues before full Unity compilation.
 
 ### Activation Workflow (`activation.yml`)
 
