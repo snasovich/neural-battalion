@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.Tilemaps;
 using NeuralBattalion.Data;
 using NeuralBattalion.Core.Events;
+using NeuralBattalion.Utility;
 
 namespace NeuralBattalion.Terrain
 {
@@ -45,6 +46,12 @@ namespace NeuralBattalion.Terrain
             InitializeGrid();
         }
 
+        private void Start()
+        {
+            // Create fallback tiles if assets are not assigned
+            CreateFallbackTilesIfNeeded();
+        }
+
         /// <summary>
         /// Initialize the internal grid data.
         /// </summary>
@@ -78,8 +85,25 @@ namespace NeuralBattalion.Terrain
 
             ClearLevel();
 
-            // TODO: Parse level data and place tiles
-            // levelData.TileData contains the grid information
+            // Parse level data and place tiles
+            TileType[,] grid = levelData.ParseTileData();
+            
+            Debug.Log($"[TerrainManager] Building level: {levelData.LevelName}");
+            Debug.Log($"[TerrainManager] Grid size: {levelData.GridWidth}x{levelData.GridHeight}");
+            
+            for (int x = 0; x < levelData.GridWidth; x++)
+            {
+                for (int y = 0; y < levelData.GridHeight; y++)
+                {
+                    TileType tileType = grid[x, y];
+                    if (tileType != TileType.Empty)
+                    {
+                        SetTile(new Vector2Int(x, y), tileType);
+                    }
+                }
+            }
+            
+            Debug.Log($"[TerrainManager] Level built successfully");
         }
 
         /// <summary>
@@ -336,6 +360,61 @@ namespace NeuralBattalion.Terrain
                 {
                     SetTile(pos, TileType.Brick);
                 }
+            }
+        }
+
+        /// <summary>
+        /// Create simple fallback tiles if tile assets are not assigned.
+        /// This creates basic colored tiles using generated sprites.
+        /// </summary>
+        private void CreateFallbackTilesIfNeeded()
+        {
+            if (brickTile == null)
+            {
+                Tile tile = ScriptableObject.CreateInstance<Tile>();
+                tile.sprite = SpriteGenerator.CreateColoredSprite(new Color(0.8f, 0.4f, 0.2f), 16, 16, 16f); // Orange-brown
+                brickTile = tile;
+                Debug.Log("[TerrainManager] Created fallback brick tile");
+            }
+
+            if (steelTile == null)
+            {
+                Tile tile = ScriptableObject.CreateInstance<Tile>();
+                tile.sprite = SpriteGenerator.CreateColoredSprite(new Color(0.7f, 0.7f, 0.7f), 16, 16, 16f); // Gray
+                steelTile = tile;
+                Debug.Log("[TerrainManager] Created fallback steel tile");
+            }
+
+            if (waterTile == null)
+            {
+                Tile tile = ScriptableObject.CreateInstance<Tile>();
+                tile.sprite = SpriteGenerator.CreateColoredSprite(new Color(0.2f, 0.4f, 0.8f), 16, 16, 16f); // Blue
+                waterTile = tile;
+                Debug.Log("[TerrainManager] Created fallback water tile");
+            }
+
+            if (treeTile == null)
+            {
+                Tile tile = ScriptableObject.CreateInstance<Tile>();
+                tile.sprite = SpriteGenerator.CreateColoredSprite(new Color(0.2f, 0.6f, 0.2f), 16, 16, 16f); // Green
+                treeTile = tile;
+                Debug.Log("[TerrainManager] Created fallback tree tile");
+            }
+
+            if (iceTile == null)
+            {
+                Tile tile = ScriptableObject.CreateInstance<Tile>();
+                tile.sprite = SpriteGenerator.CreateColoredSprite(new Color(0.7f, 0.9f, 1.0f), 16, 16, 16f); // Light blue
+                iceTile = tile;
+                Debug.Log("[TerrainManager] Created fallback ice tile");
+            }
+
+            if (groundTile == null)
+            {
+                Tile tile = ScriptableObject.CreateInstance<Tile>();
+                tile.sprite = SpriteGenerator.CreateColoredSprite(new Color(0.2f, 0.2f, 0.2f), 16, 16, 16f); // Dark gray
+                groundTile = tile;
+                Debug.Log("[TerrainManager] Created fallback ground tile");
             }
         }
     }
