@@ -68,7 +68,10 @@ namespace NeuralBattalion.Data
                 return grid;
             }
 
+            Debug.Log($"[LevelData] Parsing tile data for level: {levelName}\n{tileDataString}");
+
             string[] rows = tileDataString.Split('\n');
+            Debug.Log($"[LevelData] Tile data has {rows.Length} rows.");
 
             for (int y = 0; y < Mathf.Min(rows.Length, gridHeight); y++)
             {
