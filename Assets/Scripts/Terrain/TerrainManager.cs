@@ -45,6 +45,12 @@ namespace NeuralBattalion.Terrain
             InitializeGrid();
         }
 
+        private void Start()
+        {
+            // Create fallback tiles if assets are not assigned
+            CreateFallbackTilesIfNeeded();
+        }
+
         /// <summary>
         /// Initialize the internal grid data.
         /// </summary>
@@ -78,8 +84,25 @@ namespace NeuralBattalion.Terrain
 
             ClearLevel();
 
-            // TODO: Parse level data and place tiles
-            // levelData.TileData contains the grid information
+            // Parse level data and place tiles
+            TileType[,] grid = levelData.ParseTileData();
+            
+            Debug.Log($"[TerrainManager] Building level: {levelData.LevelName}");
+            Debug.Log($"[TerrainManager] Grid size: {levelData.GridWidth}x{levelData.GridHeight}");
+            
+            for (int x = 0; x < levelData.GridWidth; x++)
+            {
+                for (int y = 0; y < levelData.GridHeight; y++)
+                {
+                    TileType tileType = grid[x, y];
+                    if (tileType != TileType.Empty)
+                    {
+                        SetTile(new Vector2Int(x, y), tileType);
+                    }
+                }
+            }
+            
+            Debug.Log($"[TerrainManager] Level built successfully");
         }
 
         /// <summary>
@@ -336,6 +359,55 @@ namespace NeuralBattalion.Terrain
                 {
                     SetTile(pos, TileType.Brick);
                 }
+            }
+        }
+
+        /// <summary>
+        /// Create simple fallback tiles if tile assets are not assigned.
+        /// This creates basic colored tiles using Unity's built-in Tile class.
+        /// </summary>
+        private void CreateFallbackTilesIfNeeded()
+        {
+            if (brickTile == null)
+            {
+                brickTile = UnityEngine.Tilemaps.Tile.CreateInstance<UnityEngine.Tilemaps.Tile>();
+                ((UnityEngine.Tilemaps.Tile)brickTile).color = new Color(0.8f, 0.4f, 0.2f); // Orange-brown
+                Debug.Log("[TerrainManager] Created fallback brick tile");
+            }
+
+            if (steelTile == null)
+            {
+                steelTile = UnityEngine.Tilemaps.Tile.CreateInstance<UnityEngine.Tilemaps.Tile>();
+                ((UnityEngine.Tilemaps.Tile)steelTile).color = new Color(0.7f, 0.7f, 0.7f); // Gray
+                Debug.Log("[TerrainManager] Created fallback steel tile");
+            }
+
+            if (waterTile == null)
+            {
+                waterTile = UnityEngine.Tilemaps.Tile.CreateInstance<UnityEngine.Tilemaps.Tile>();
+                ((UnityEngine.Tilemaps.Tile)waterTile).color = new Color(0.2f, 0.4f, 0.8f); // Blue
+                Debug.Log("[TerrainManager] Created fallback water tile");
+            }
+
+            if (treeTile == null)
+            {
+                treeTile = UnityEngine.Tilemaps.Tile.CreateInstance<UnityEngine.Tilemaps.Tile>();
+                ((UnityEngine.Tilemaps.Tile)treeTile).color = new Color(0.2f, 0.6f, 0.2f); // Green
+                Debug.Log("[TerrainManager] Created fallback tree tile");
+            }
+
+            if (iceTile == null)
+            {
+                iceTile = UnityEngine.Tilemaps.Tile.CreateInstance<UnityEngine.Tilemaps.Tile>();
+                ((UnityEngine.Tilemaps.Tile)iceTile).color = new Color(0.7f, 0.9f, 1.0f); // Light blue
+                Debug.Log("[TerrainManager] Created fallback ice tile");
+            }
+
+            if (groundTile == null)
+            {
+                groundTile = UnityEngine.Tilemaps.Tile.CreateInstance<UnityEngine.Tilemaps.Tile>();
+                ((UnityEngine.Tilemaps.Tile)groundTile).color = new Color(0.2f, 0.2f, 0.2f); // Dark gray
+                Debug.Log("[TerrainManager] Created fallback ground tile");
             }
         }
     }
