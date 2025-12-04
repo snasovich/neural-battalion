@@ -177,18 +177,24 @@ namespace NeuralBattalion.Player
             }
 
             // Calculate movement direction
-            Vector2 moveDir = (targetPosition - rb.position).normalized;
+            Vector2 moveDelta = targetPosition - rb.position;
             
-            // Check tank-to-tank collision using directional raycast
-            // This allows movement perpendicular to obstacles while blocking direct collision
-            RaycastHit2D hit = Physics2D.CircleCast(rb.position, collisionCheckRadius, moveDir, collisionCheckDistance);
-            
-            if (hit.collider != null && hit.collider.gameObject != gameObject)
+            // Skip collision check if not actually moving
+            if (moveDelta.sqrMagnitude > 0.0001f)
             {
-                // Check if it's another tank using cached component checks
-                if (IsTank(hit.collider.gameObject))
+                Vector2 moveDir = moveDelta.normalized;
+                
+                // Check tank-to-tank collision using directional raycast
+                // This allows movement perpendicular to obstacles while blocking direct collision
+                RaycastHit2D hit = Physics2D.CircleCast(rb.position, collisionCheckRadius, moveDir, collisionCheckDistance);
+                
+                if (hit.collider != null && hit.collider.gameObject != gameObject)
                 {
-                    return false;
+                    // Check if it's another tank using cached component checks
+                    if (IsTank(hit.collider.gameObject))
+                    {
+                        return false;
+                    }
                 }
             }
 
