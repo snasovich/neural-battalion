@@ -75,8 +75,10 @@ public class GameSceneController : MonoBehaviour
             
             if (enemySpawner == null)
             {
-                Debug.LogWarning("[GameSceneController] EnemySpawner not found in scene - enemies will not spawn");
-                return;
+                Debug.Log("[GameSceneController] EnemySpawner not found - creating one");
+                GameObject spawnerObj = new GameObject("EnemySpawner");
+                enemySpawner = spawnerObj.AddComponent<EnemySpawner>();
+                Debug.Log("[GameSceneController] EnemySpawner created successfully");
             }
         }
         
