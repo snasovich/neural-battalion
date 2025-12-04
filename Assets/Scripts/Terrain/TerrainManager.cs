@@ -43,13 +43,12 @@ namespace NeuralBattalion.Terrain
 
         private void Awake()
         {
+            Debug.Log("[TerrainManager] Awake - Initializing");
             InitializeGrid();
-        }
-
-        private void Start()
-        {
             // Create fallback tiles if assets are not assigned
+            // This must happen in Awake() before any Start() methods call BuildLevel()
             CreateFallbackTilesIfNeeded();
+            Debug.Log("[TerrainManager] Awake - Complete");
         }
 
         /// <summary>
@@ -83,6 +82,8 @@ namespace NeuralBattalion.Terrain
                 return;
             }
 
+            Debug.Log($"[TerrainManager] BuildLevel started - Tiles available: brick={brickTile != null}, steel={steelTile != null}, water={waterTile != null}");
+
             ClearLevel();
 
             // Parse level data and place tiles
@@ -91,6 +92,7 @@ namespace NeuralBattalion.Terrain
             Debug.Log($"[TerrainManager] Building level: {levelData.LevelName}");
             Debug.Log($"[TerrainManager] Grid size: {levelData.GridWidth}x{levelData.GridHeight}");
             
+            int tilesSet = 0;
             for (int x = 0; x < levelData.GridWidth; x++)
             {
                 for (int y = 0; y < levelData.GridHeight; y++)
@@ -99,11 +101,12 @@ namespace NeuralBattalion.Terrain
                     if (tileType != TileType.Empty)
                     {
                         SetTile(new Vector2Int(x, y), tileType);
+                        tilesSet++;
                     }
                 }
             }
             
-            Debug.Log($"[TerrainManager] Level built successfully");
+            Debug.Log($"[TerrainManager] Level built successfully - {tilesSet} tiles placed");
         }
 
         /// <summary>
