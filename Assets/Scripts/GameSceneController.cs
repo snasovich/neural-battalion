@@ -108,6 +108,13 @@ public class GameSceneController : MonoBehaviour
             // Use assigned prefab
             playerInstance = Instantiate(playerTankPrefab, spawnWorldPos, Quaternion.identity);
             playerInstance.name = "PlayerTank";
+            
+            // Configure weapon if prefab already has one
+            Weapon weapon = playerInstance.GetComponentInChildren<Weapon>();
+            if (weapon != null)
+            {
+                ConfigureWeapon(weapon);
+            }
         }
         else
         {

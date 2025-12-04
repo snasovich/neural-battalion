@@ -41,6 +41,20 @@ namespace NeuralBattalion.Terrain
                 spriteRenderer = GetComponent<SpriteRenderer>();
             }
         }
+        
+        /// <summary>
+        /// Initialize the destructible terrain with type and health.
+        /// Call this after instantiation to properly set up the component.
+        /// </summary>
+        /// <param name="type">Tile type.</param>
+        /// <param name="health">Maximum health.</param>
+        public void Initialize(TileType type, int health)
+        {
+            tileType = type;
+            maxHealth = health;
+            currentHealth = maxHealth;
+            isDestroyed = false;
+        }
 
         /// <summary>
         /// Take damage from a projectile.

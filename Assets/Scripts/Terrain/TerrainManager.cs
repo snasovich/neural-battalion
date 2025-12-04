@@ -229,29 +229,10 @@ namespace NeuralBattalion.Terrain
             collider.size = cellSize * 0.95f; // Slightly smaller to prevent overlaps
             collider.isTrigger = true;
             
-            // Add DestructibleTerrain component
+            // Add DestructibleTerrain component and initialize it
             DestructibleTerrain destructible = terrainObj.AddComponent<DestructibleTerrain>();
-            
-            // Use reflection to set private fields
-            var terrainType = typeof(DestructibleTerrain);
-            var tileTypeField = terrainType.GetField("tileType", 
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            var maxHealthField = terrainType.GetField("maxHealth", 
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            
-            if (tileTypeField != null)
-            {
-                tileTypeField.SetValue(destructible, tileType);
-            }
-            
-            if (maxHealthField != null)
-            {
-                int health = GetTileMaxHealth(tileType);
-                maxHealthField.SetValue(destructible, health);
-            }
-            
-            // Subscribe to destruction event
-            destructible.gameObject.name += $"_{tileType}";
+            int health = GetTileMaxHealth(tileType);
+            destructible.Initialize(tileType, health);
             
             // Store reference
             destructibleObjects[gridPos.x, gridPos.y] = terrainObj;
