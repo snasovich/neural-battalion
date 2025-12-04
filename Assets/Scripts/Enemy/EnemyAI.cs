@@ -68,11 +68,24 @@ namespace NeuralBattalion.Enemy
                 if (playerObj != null)
                 {
                     player = playerObj.transform;
+                    if (debugMode)
+                    {
+                        Debug.Log($"[EnemyAI {gameObject.name}] Found player at {player.position}");
+                    }
+                }
+                else if (debugMode)
+                {
+                    Debug.LogWarning($"[EnemyAI {gameObject.name}] No player found in scene");
                 }
             }
 
             // Start in idle state
             ChangeState(AIState.Idle);
+            
+            if (debugMode)
+            {
+                Debug.Log($"[EnemyAI {gameObject.name}] AI initialized - Detection range: {detectionRange}, Attack range: {attackRange}");
+            }
         }
 
         private void Update()
@@ -111,7 +124,7 @@ namespace NeuralBattalion.Enemy
         {
             if (debugMode)
             {
-                Debug.Log($"[EnemyAI] State change: {CurrentState} -> {newState}");
+                Debug.Log($"[EnemyAI {gameObject.name}] State change: {CurrentState} -> {newState}");
             }
 
             // Exit current state
@@ -316,6 +329,11 @@ namespace NeuralBattalion.Enemy
             {
                 currentDirection = directions[Random.Range(0, directions.Length)];
                 attempts++;
+            }
+            
+            if (debugMode)
+            {
+                Debug.Log($"[EnemyAI {gameObject.name}] Chose direction: {currentDirection} (attempts: {attempts})");
             }
         }
 

@@ -172,28 +172,49 @@ namespace NeuralBattalion.Enemy
 
             // Select spawn point
             Transform spawnPoint = SelectSpawnPoint();
-            if (spawnPoint == null) return;
+            if (spawnPoint == null)
+            {
+                if (debugMode)
+                {
+                    Debug.LogWarning("[EnemySpawner] No available spawn points - will retry next cycle");
+                }
+                return;
+            }
 
             // Determine enemy type from wave data
             int enemyType = DetermineEnemyType();
 
             // Spawn enemy
             GameObject prefab = enemyPrefabs[Mathf.Clamp(enemyType, 0, enemyPrefabs.Length - 1)];
+            if (prefab == null)
+            {
+                Debug.LogError($"[EnemySpawner] Enemy prefab for type {enemyType} is null!");
+                return;
+            }
+            
             GameObject enemyObj = Instantiate(prefab, spawnPoint.position, spawnPoint.rotation);
+            enemyObj.name = $"Enemy_{nextEnemyId}_{EnemyTypes.GetName(enemyType)}";
 
             EnemyController enemy = enemyObj.GetComponent<EnemyController>();
             if (enemy != null)
             {
                 enemy.Initialize(nextEnemyId++, enemyType);
                 activeEnemies.Add(enemy);
+                
+                if (debugMode)
+                {
+                    Debug.Log($"[EnemySpawner] Spawned enemy {enemy.EnemyId} ({EnemyTypes.GetName(enemyType)}) " +
+                             $"at {spawnPoint.position} - Wave progress: {enemiesSpawnedThisWave}/{enemiesToSpawnThisWave}");
+                }
+            }
+            else
+            {
+                Debug.LogError("[EnemySpawner] Spawned enemy has no EnemyController component!");
+                Destroy(enemyObj);
+                return;
             }
 
             enemiesSpawnedThisWave++;
-
-            if (debugMode)
-            {
-                Debug.Log($"[EnemySpawner] Spawned enemy {enemy?.EnemyId} of type {enemyType}");
-            }
         }
 
         /// <summary>
@@ -334,6 +355,45 @@ namespace NeuralBattalion.Enemy
                 }
             }
             return total;
+        }
+
+        /// <summary>
+        /// Configure spawn points for enemy spawning.
+        /// </summary>
+        /// <param name="points">Array of spawn point transforms.</param>
+        public void ConfigureSpawnPoints(Transform[] points)
+        {
+            spawnPoints = points;
+            if (debugMode)
+            {
+                Debug.Log($"[EnemySpawner] Configured {points?.Length ?? 0} spawn points");
+            }
+        }
+
+        /// <summary>
+        /// Configure enemy prefabs for spawning.
+        /// </summary>
+        /// <param name="prefabs">Array of enemy prefab GameObjects.</param>
+        public void ConfigureEnemyPrefabs(GameObject[] prefabs)
+        {
+            enemyPrefabs = prefabs;
+            if (debugMode)
+            {
+                Debug.Log($"[EnemySpawner] Configured {prefabs?.Length ?? 0} enemy prefabs");
+            }
+        }
+
+        /// <summary>
+        /// Configure wave data for spawning.
+        /// </summary>
+        /// <param name="waveData">Array of WaveData configurations.</param>
+        public void ConfigureWaves(WaveData[] waveData)
+        {
+            waves = waveData;
+            if (debugMode)
+            {
+                Debug.Log($"[EnemySpawner] Configured {waveData?.Length ?? 0} waves");
+            }
         }
     }
 }

@@ -52,6 +52,12 @@ namespace NeuralBattalion.Enemy
             rb.gravityScale = 0f;
             rb.freezeRotation = true;
 
+            // Find sprite renderer if not assigned
+            if (spriteRenderer == null)
+            {
+                spriteRenderer = GetComponent<SpriteRenderer>();
+            }
+
             if (tankData != null)
             {
                 ApplyTankData();
@@ -94,6 +100,9 @@ namespace NeuralBattalion.Enemy
             isAlive = true;
             isFrozen = false;
 
+            Debug.Log($"[EnemyController] Enemy {enemyId} initialized - Type: {EnemyTypes.GetName(type)}, " +
+                     $"Health: {health}, Speed: {moveSpeed}, Position: {transform.position}");
+
             EventBus.Publish(new EnemySpawnedEvent { EnemyId = enemyId, EnemyType = enemyType });
         }
 
@@ -108,10 +117,57 @@ namespace NeuralBattalion.Enemy
             health = maxHealth;
             scoreValue = tankData.ScoreValue;
 
+            // Apply visual properties
+            if (spriteRenderer != null)
+            {
+                if (tankData.TankSprite != null)
+                {
+                    spriteRenderer.sprite = tankData.TankSprite;
+                }
+                else
+                {
+                    // Create a simple colored sprite if no sprite is provided
+                    spriteRenderer.sprite = CreateSimpleSprite();
+                }
+                spriteRenderer.color = tankData.TankColor;
+            }
+
             if (weapon != null)
             {
                 weapon.Configure(tankData);
             }
+        }
+
+        /// <summary>
+        /// Create a simple colored square sprite for the tank.
+        /// </summary>
+        private Sprite CreateSimpleSprite()
+        {
+            int size = 32;
+            Texture2D texture = new Texture2D(size, size);
+            
+            // Create a simple tank shape
+            for (int y = 0; y < size; y++)
+            {
+                for (int x = 0; x < size; x++)
+                {
+                    // Create a border and fill
+                    bool isEdge = x < 2 || x >= size - 2 || y < 2 || y >= size - 2;
+                    bool isTurret = x >= size / 2 - 3 && x < size / 2 + 3 && y >= size / 2;
+                    
+                    if (isTurret || isEdge)
+                    {
+                        texture.SetPixel(x, y, Color.white);
+                    }
+                    else
+                    {
+                        texture.SetPixel(x, y, new Color(1f, 1f, 1f, 0.8f));
+                    }
+                }
+            }
+            
+            texture.Apply();
+            return Sprite.Create(texture, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), size);
         }
 
         /// <summary>
