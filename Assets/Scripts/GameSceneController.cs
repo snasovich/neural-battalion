@@ -5,6 +5,7 @@ using NeuralBattalion.Player;
 using NeuralBattalion.Combat;
 using NeuralBattalion.Enemy;
 using NeuralBattalion.Utility;
+using NeuralBattalion.Core.Events;
 
 /// <summary>
 /// Controller for the GameScene that initializes and loads the level.
@@ -34,12 +35,7 @@ public class GameSceneController : MonoBehaviour
     private GameObject playerInstance;
     private LevelData currentLevel;
     
-    private void Start()
-    {
-        Debug.Log("[GameSceneController] GameScene started");
-        LoadLevel();
-        InitializeEnemySystem();
-    }
+
     
     /// <summary>
     /// Load the specified level from Resources.
@@ -229,7 +225,9 @@ public class GameSceneController : MonoBehaviour
     /// <summary>
     /// Configure the weapon with a projectile prefab.
     /// </summary>
-    private void ConfigureWeapon(Weapon weapon)
+    /// <param name="weapon">Weapon to configure.</param>
+    /// <param name="isPlayer">Whether this is a player weapon (affects projectile appearance).</param>
+    private void ConfigureWeapon(Weapon weapon, bool isPlayer = true)
     {
         if (weapon == null) return;
         
@@ -237,7 +235,7 @@ public class GameSceneController : MonoBehaviour
         if (projectilePrefab == null)
         {
             Debug.Log("[GameSceneController] Creating projectile prefab at runtime");
-            projectilePrefab = PrefabFactory.CreateProjectilePrefab(true);
+            projectilePrefab = PrefabFactory.CreateProjectilePrefab(isPlayer);
         }
         
         // Use reflection to set the private projectilePrefab field
@@ -248,11 +246,47 @@ public class GameSceneController : MonoBehaviour
         if (projectilePrefabField != null)
         {
             projectilePrefabField.SetValue(weapon, projectilePrefab);
-            Debug.Log("[GameSceneController] Configured weapon with projectile prefab");
+            Debug.Log($"[GameSceneController] Configured {(isPlayer ? "player" : "enemy")} weapon with projectile prefab");
         }
         else
         {
             Debug.LogError("[GameSceneController] Failed to configure weapon - projectilePrefab field not found");
+        }
+    }
+    
+    private void Start()
+    {
+        Debug.Log("[GameSceneController] GameScene started");
+        LoadLevel();
+        InitializeEnemySystem();
+        
+        // Subscribe to enemy spawn events to configure their weapons
+        EventBus.Subscribe<EnemySpawnedEvent>(OnEnemySpawned);
+    }
+    
+    private void OnDestroy()
+    {
+        EventBus.Unsubscribe<EnemySpawnedEvent>(OnEnemySpawned);
+    }
+    
+    /// <summary>
+    /// Handle enemy spawned event to configure weapon.
+    /// </summary>
+    private void OnEnemySpawned(EnemySpawnedEvent evt)
+    {
+        // Find the enemy that was just spawned and configure its weapon
+        var enemies = FindObjectsOfType<EnemyController>();
+        foreach (var enemy in enemies)
+        {
+            if (enemy.EnemyId == evt.EnemyId)
+            {
+                Weapon weapon = enemy.GetComponentInChildren<Weapon>();
+                if (weapon != null)
+                {
+                    ConfigureWeapon(weapon, false);
+                }
+                break;
+            }
         }
     }
     
