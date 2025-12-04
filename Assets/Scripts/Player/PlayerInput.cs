@@ -123,7 +123,13 @@ namespace NeuralBattalion.Player
                 return moveAction.ReadValue<Vector2>();
             }
 
-            return currentMoveInput.normalized;
+            // Only normalize if magnitude is significant (avoid normalizing decay values from Input gravity)
+            if (currentMoveInput.magnitude > 0.5f)
+            {
+                return currentMoveInput.normalized;
+            }
+
+            return Vector2.zero;
         }
 
         /// <summary>
