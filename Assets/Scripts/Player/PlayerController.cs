@@ -98,6 +98,19 @@ namespace NeuralBattalion.Player
         }
 
         /// <summary>
+        /// Set tank data at runtime.
+        /// </summary>
+        /// <param name="data">Tank data to apply.</param>
+        public void SetTankData(TankData data)
+        {
+            tankData = data;
+            if (tankData != null)
+            {
+                ApplyTankData();
+            }
+        }
+
+        /// <summary>
         /// Move the tank based on input.
         /// </summary>
         private void Move()
