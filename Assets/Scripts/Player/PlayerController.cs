@@ -37,6 +37,7 @@ namespace NeuralBattalion.Player
 
         private Rigidbody2D rb;
         private TerrainManager terrainManager;
+        private Collider2D[] overlapBuffer = new Collider2D[10];
         private Vector2 moveDirection;
         private bool canShoot = true;
         private float lastShotTime;
@@ -145,7 +146,7 @@ namespace NeuralBattalion.Player
             Vector2 targetPosition = rb.position + movement;
 
             // Check if movement is valid (no terrain or tank collision)
-            if (CanMoveTo(targetPosition, snappedDirection))
+            if (CanMoveTo(targetPosition))
             {
                 rb.MovePosition(targetPosition);
             }
@@ -155,9 +156,8 @@ namespace NeuralBattalion.Player
         /// Check if the tank can move to a target position without colliding.
         /// </summary>
         /// <param name="targetPosition">The target position to check.</param>
-        /// <param name="direction">The direction of movement.</param>
         /// <returns>True if the position is valid.</returns>
-        private bool CanMoveTo(Vector2 targetPosition, Vector2 direction)
+        private bool CanMoveTo(Vector2 targetPosition)
         {
             // Check terrain collision for tank-sized area
             if (terrainManager != null)
@@ -168,15 +168,17 @@ namespace NeuralBattalion.Player
                 }
             }
 
-            // Check tank-to-tank collision using overlap check
-            Collider2D[] overlaps = Physics2D.OverlapCircleAll(targetPosition, collisionCheckRadius);
-            foreach (Collider2D overlap in overlaps)
+            // Check tank-to-tank collision using overlap check (non-allocating)
+            int numOverlaps = Physics2D.OverlapCircleNonAlloc(targetPosition, collisionCheckRadius, overlapBuffer);
+            for (int i = 0; i < numOverlaps; i++)
             {
+                Collider2D overlap = overlapBuffer[i];
+                
                 // Skip self
                 if (overlap.gameObject == gameObject)
                     continue;
 
-                // Check if it's another tank (player or enemy)
+                // Check if it's another tank by checking for tank components
                 if (overlap.GetComponent<PlayerController>() != null || 
                     overlap.GetComponent<EnemyController>() != null)
                 {
