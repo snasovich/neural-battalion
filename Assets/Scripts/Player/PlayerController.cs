@@ -33,11 +33,11 @@ namespace NeuralBattalion.Player
         [SerializeField] private float rotationSpeed = 180f;
 
         [Header("Collision Settings")]
-        [SerializeField] private float collisionCheckRadius = 0.4f;
+        [SerializeField] private float collisionCheckRadius = 0.5f;
+        [SerializeField] private float collisionCheckDistance = 0.6f;
 
         private Rigidbody2D rb;
         private TerrainManager terrainManager;
-        private Collider2D[] overlapBuffer = new Collider2D[10];
         
         // Cache for tank component checks
         // Note: This cache grows as new tanks are encountered. In typical gameplay with limited tanks,
@@ -176,18 +176,17 @@ namespace NeuralBattalion.Player
                 }
             }
 
-            // Check tank-to-tank collision using overlap check (non-allocating)
-            int numOverlaps = Physics2D.OverlapCircleNonAlloc(targetPosition, collisionCheckRadius, overlapBuffer);
-            for (int i = 0; i < numOverlaps; i++)
+            // Calculate movement direction
+            Vector2 moveDir = (targetPosition - rb.position).normalized;
+            
+            // Check tank-to-tank collision using directional raycast
+            // This allows movement perpendicular to obstacles while blocking direct collision
+            RaycastHit2D hit = Physics2D.CircleCast(rb.position, collisionCheckRadius, moveDir, collisionCheckDistance);
+            
+            if (hit.collider != null && hit.collider.gameObject != gameObject)
             {
-                Collider2D overlap = overlapBuffer[i];
-                
-                // Skip self
-                if (overlap.gameObject == gameObject)
-                    continue;
-
                 // Check if it's another tank using cached component checks
-                if (IsTank(overlap.gameObject))
+                if (IsTank(hit.collider.gameObject))
                 {
                     return false;
                 }
