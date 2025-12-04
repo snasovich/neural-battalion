@@ -35,6 +35,8 @@ namespace NeuralBattalion.Enemy
         [Header("Collision Settings")]
         [SerializeField] private float collisionCheckRadius = 0.5f;
         [SerializeField] private float collisionCheckDistance = 0.6f;
+        
+        private const float MIN_MOVEMENT_THRESHOLD = 0.0001f;
 
         private Rigidbody2D rb;
         private TerrainManager terrainManager;
@@ -249,7 +251,7 @@ namespace NeuralBattalion.Enemy
             Vector2 moveDelta = targetPosition - rb.position;
             
             // Skip collision check if not actually moving
-            if (moveDelta.sqrMagnitude > 0.0001f)
+            if (moveDelta.sqrMagnitude > MIN_MOVEMENT_THRESHOLD)
             {
                 Vector2 moveDir = moveDelta.normalized;
                 
