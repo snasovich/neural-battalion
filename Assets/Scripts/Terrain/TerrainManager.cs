@@ -82,7 +82,7 @@ namespace NeuralBattalion.Terrain
                 return;
             }
 
-            Debug.Log($"[TerrainManager] BuildLevel started - Tiles available: brick={brickTile != null}, steel={steelTile != null}, water={waterTile != null}");
+            Debug.Log($"[TerrainManager] BuildLevel started - Tiles available: brick={brickTile != null}, steel={steelTile != null}, water={waterTile != null}, tree={treeTile != null}, ice={iceTile != null}, ground={groundTile != null}");
 
             ClearLevel();
 
