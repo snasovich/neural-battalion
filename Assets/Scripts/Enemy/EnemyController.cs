@@ -40,6 +40,9 @@ namespace NeuralBattalion.Enemy
         private Collider2D[] overlapBuffer = new Collider2D[10];
         
         // Cache for tank component checks
+        // Note: This cache grows as new tanks are encountered. In typical gameplay with limited tanks,
+        // this is not an issue. For games with many dynamically spawned/destroyed tanks, consider
+        // implementing cache cleanup or using a different collision identification strategy.
         private static System.Collections.Generic.Dictionary<GameObject, bool> tankCache = 
             new System.Collections.Generic.Dictionary<GameObject, bool>();
         private Vector2 moveDirection;
