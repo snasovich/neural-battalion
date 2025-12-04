@@ -83,18 +83,6 @@ public class GameSceneController : MonoBehaviour
             }
         }
         
-        // Create player tank prefab if not assigned
-        if (playerTankPrefab == null)
-        {
-            playerTankPrefab = CreatePlayerTankPrefab();
-        }
-        
-        if (playerTankPrefab == null)
-        {
-            Debug.LogError("[GameSceneController] Failed to create player tank prefab!");
-            return;
-        }
-        
         // Get spawn position from level data (grid coordinates)
         Vector2Int spawnGridPos = levelData.PlayerSpawnPoint;
         
@@ -102,9 +90,18 @@ public class GameSceneController : MonoBehaviour
         // Assuming each tile is 1 unit and grid starts at (0,0)
         Vector3 spawnWorldPos = new Vector3(spawnGridPos.x + 0.5f, spawnGridPos.y + 0.5f, 0f);
         
-        // Instantiate player tank
-        playerInstance = Instantiate(playerTankPrefab, spawnWorldPos, Quaternion.identity);
-        playerInstance.name = "PlayerTank";
+        // Create player tank (from prefab or at runtime)
+        if (playerTankPrefab != null)
+        {
+            // Use assigned prefab
+            playerInstance = Instantiate(playerTankPrefab, spawnWorldPos, Quaternion.identity);
+            playerInstance.name = "PlayerTank";
+        }
+        else
+        {
+            // Create player tank at runtime if no prefab assigned
+            playerInstance = CreatePlayerTankAtPosition(spawnWorldPos);
+        }
         
         // Configure player controller with tank data
         PlayerController playerController = playerInstance.GetComponent<PlayerController>();
@@ -124,13 +121,14 @@ public class GameSceneController : MonoBehaviour
     }
     
     /// <summary>
-    /// Create a player tank prefab at runtime.
+    /// Create a player tank at runtime at a specific position.
     /// This is a fallback for when no prefab is assigned in the inspector.
     /// </summary>
-    private GameObject CreatePlayerTankPrefab()
+    private GameObject CreatePlayerTankAtPosition(Vector3 position)
     {
         // Create a new GameObject for the player tank
         GameObject tankGO = new GameObject("PlayerTank");
+        tankGO.transform.position = position;
         
         // Add Rigidbody2D
         Rigidbody2D rb = tankGO.AddComponent<Rigidbody2D>();
@@ -165,7 +163,7 @@ public class GameSceneController : MonoBehaviour
         // Add PlayerController (this should be last as it references other components)
         PlayerController controller = tankGO.AddComponent<PlayerController>();
         
-        Debug.Log("[GameSceneController] Created player tank prefab at runtime");
+        Debug.Log("[GameSceneController] Created player tank at runtime");
         
         return tankGO;
     }
