@@ -95,10 +95,10 @@ namespace NeuralBattalion.Terrain
                 }
                 
                 // Set as trigger for projectiles to detect
-                var compositCollider = obstacleTilemap.GetComponent<CompositeCollider2D>();
-                if (compositCollider != null)
+                var compositeCollider = obstacleTilemap.GetComponent<CompositeCollider2D>();
+                if (compositeCollider != null)
                 {
-                    compositCollider.isTrigger = true;
+                    compositeCollider.isTrigger = true;
                 }
                 else
                 {

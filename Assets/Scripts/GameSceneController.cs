@@ -231,11 +231,23 @@ public class GameSceneController : MonoBehaviour
     {
         if (weapon == null) return;
         
-        // Create or load projectile prefab
-        if (projectilePrefab == null)
+        // Create appropriate projectile prefab based on weapon owner
+        GameObject prefabToUse;
+        if (isPlayer)
         {
-            Debug.Log("[GameSceneController] Creating projectile prefab at runtime");
-            projectilePrefab = PrefabFactory.CreateProjectilePrefab(isPlayer);
+            // Create or use player projectile prefab
+            if (projectilePrefab == null)
+            {
+                Debug.Log("[GameSceneController] Creating player projectile prefab at runtime");
+                projectilePrefab = PrefabFactory.CreateProjectilePrefab(true);
+            }
+            prefabToUse = projectilePrefab;
+        }
+        else
+        {
+            // Create enemy projectile prefab (different visual)
+            Debug.Log("[GameSceneController] Creating enemy projectile prefab at runtime");
+            prefabToUse = PrefabFactory.CreateProjectilePrefab(false);
         }
         
         // Use reflection to set the private projectilePrefab field
@@ -245,7 +257,7 @@ public class GameSceneController : MonoBehaviour
         
         if (projectilePrefabField != null)
         {
-            projectilePrefabField.SetValue(weapon, projectilePrefab);
+            projectilePrefabField.SetValue(weapon, prefabToUse);
             Debug.Log($"[GameSceneController] Configured {(isPlayer ? "player" : "enemy")} weapon with projectile prefab");
         }
         else
