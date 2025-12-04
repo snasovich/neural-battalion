@@ -38,6 +38,10 @@ namespace NeuralBattalion.Enemy
         private Rigidbody2D rb;
         private TerrainManager terrainManager;
         private Collider2D[] overlapBuffer = new Collider2D[10];
+        
+        // Cache for tank component checks
+        private static System.Collections.Generic.Dictionary<GameObject, bool> tankCache = 
+            new System.Collections.Generic.Dictionary<GameObject, bool>();
         private Vector2 moveDirection;
         private float moveSpeed = 3f;
         private float rotationSpeed = 180f;
@@ -247,15 +251,32 @@ namespace NeuralBattalion.Enemy
                 if (overlap.gameObject == gameObject)
                     continue;
 
-                // Check if it's another tank by checking for tank components
-                if (overlap.GetComponent<PlayerController>() != null || 
-                    overlap.GetComponent<EnemyController>() != null)
+                // Check if it's another tank using cached component checks
+                if (IsTank(overlap.gameObject))
                 {
                     return false;
                 }
             }
 
             return true;
+        }
+
+        /// <summary>
+        /// Check if a GameObject is a tank (with caching for performance).
+        /// </summary>
+        private static bool IsTank(GameObject obj)
+        {
+            // Check cache first
+            if (tankCache.TryGetValue(obj, out bool isTank))
+                return isTank;
+
+            // Not in cache, check components
+            bool result = obj.GetComponent<PlayerController>() != null || 
+                          obj.GetComponent<EnemyController>() != null;
+            
+            // Cache the result
+            tankCache[obj] = result;
+            return result;
         }
 
         /// <summary>

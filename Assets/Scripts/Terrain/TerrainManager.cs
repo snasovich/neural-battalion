@@ -38,6 +38,9 @@ namespace NeuralBattalion.Terrain
         private TileType[,] tileGrid;
         private int[,] tileHealth; // For destructible tiles
 
+        // Pre-allocated buffer for tank collision checks
+        private Vector2[] cornerBuffer = new Vector2[4];
+
         public int GridWidth => gridWidth;
         public int GridHeight => gridHeight;
 
@@ -351,19 +354,16 @@ namespace NeuralBattalion.Terrain
             if (!IsPositionPassable(worldPos))
                 return false;
 
-            // Check corners
+            // Check corners using pre-allocated buffer
             float halfSize = tankSize * 0.5f;
-            Vector2[] corners = new Vector2[]
-            {
-                worldPos + new Vector2(halfSize, halfSize),
-                worldPos + new Vector2(halfSize, -halfSize),
-                worldPos + new Vector2(-halfSize, halfSize),
-                worldPos + new Vector2(-halfSize, -halfSize)
-            };
+            cornerBuffer[0] = worldPos + new Vector2(halfSize, halfSize);
+            cornerBuffer[1] = worldPos + new Vector2(halfSize, -halfSize);
+            cornerBuffer[2] = worldPos + new Vector2(-halfSize, halfSize);
+            cornerBuffer[3] = worldPos + new Vector2(-halfSize, -halfSize);
 
-            foreach (var corner in corners)
+            for (int i = 0; i < 4; i++)
             {
-                if (!IsPositionPassable(corner))
+                if (!IsPositionPassable(cornerBuffer[i]))
                     return false;
             }
 
