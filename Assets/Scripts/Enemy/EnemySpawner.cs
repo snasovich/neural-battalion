@@ -356,5 +356,44 @@ namespace NeuralBattalion.Enemy
             }
             return total;
         }
+
+        /// <summary>
+        /// Configure spawn points for enemy spawning.
+        /// </summary>
+        /// <param name="points">Array of spawn point transforms.</param>
+        public void ConfigureSpawnPoints(Transform[] points)
+        {
+            spawnPoints = points;
+            if (debugMode)
+            {
+                Debug.Log($"[EnemySpawner] Configured {points?.Length ?? 0} spawn points");
+            }
+        }
+
+        /// <summary>
+        /// Configure enemy prefabs for spawning.
+        /// </summary>
+        /// <param name="prefabs">Array of enemy prefab GameObjects.</param>
+        public void ConfigureEnemyPrefabs(GameObject[] prefabs)
+        {
+            enemyPrefabs = prefabs;
+            if (debugMode)
+            {
+                Debug.Log($"[EnemySpawner] Configured {prefabs?.Length ?? 0} enemy prefabs");
+            }
+        }
+
+        /// <summary>
+        /// Configure wave data for spawning.
+        /// </summary>
+        /// <param name="waveData">Array of WaveData configurations.</param>
+        public void ConfigureWaves(WaveData[] waveData)
+        {
+            waves = waveData;
+            if (debugMode)
+            {
+                Debug.Log($"[EnemySpawner] Configured {waveData?.Length ?? 0} waves");
+            }
+        }
     }
 }

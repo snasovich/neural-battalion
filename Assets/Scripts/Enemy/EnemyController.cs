@@ -144,8 +144,7 @@ namespace NeuralBattalion.Enemy
 
             // Move forward
             Vector2 movement = snappedDirection * moveSpeed * Time.fixedDeltaTime;
-            Vector2 newPosition = rb.position + movement;
-            rb.MovePosition(newPosition);
+            rb.MovePosition(rb.position + movement);
         }
 
         /// <summary>

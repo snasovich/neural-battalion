@@ -208,7 +208,9 @@ namespace NeuralBattalion.Enemy
             EnemyController controller = testEnemy.GetComponent<EnemyController>();
             if (controller != null)
             {
-                controller.Initialize(999, 0);
+                // Load tank data for proper initialization
+                TankData testData = Resources.Load<TankData>("TankData/EnemyBasic");
+                controller.Initialize(999, 0, testData);
                 Debug.Log("✓ Test enemy spawned and initialized");
                 
                 // Test movement in different directions

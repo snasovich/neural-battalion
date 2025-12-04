@@ -159,36 +159,28 @@ public class GameSceneController : MonoBehaviour
     }
     
     /// <summary>
-    /// Configure the enemy spawner with prefabs and waves using reflection.
+    /// Configure the enemy spawner with prefabs and waves.
     /// </summary>
     private void ConfigureEnemySpawner()
     {
-        var spawnerType = typeof(EnemySpawner);
-        
-        // Set spawn points
-        var spawnPointsField = spawnerType.GetField("spawnPoints", 
-            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-        if (spawnPointsField != null && enemySpawnPoints != null)
+        // Configure spawn points
+        if (enemySpawnPoints != null && enemySpawnPoints.Length > 0)
         {
-            spawnPointsField.SetValue(enemySpawner, enemySpawnPoints);
+            enemySpawner.ConfigureSpawnPoints(enemySpawnPoints);
             Debug.Log($"[GameSceneController] Configured {enemySpawnPoints.Length} spawn points");
         }
         
-        // Set enemy prefabs
-        var prefabsField = spawnerType.GetField("enemyPrefabs",
-            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-        if (prefabsField != null && enemyPrefabs != null)
+        // Configure enemy prefabs
+        if (enemyPrefabs != null && enemyPrefabs.Length > 0)
         {
-            prefabsField.SetValue(enemySpawner, enemyPrefabs);
+            enemySpawner.ConfigureEnemyPrefabs(enemyPrefabs);
             Debug.Log($"[GameSceneController] Configured {enemyPrefabs.Length} enemy prefabs");
         }
         
-        // Set waves
-        var wavesField = spawnerType.GetField("waves",
-            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-        if (wavesField != null && waves != null)
+        // Configure waves
+        if (waves != null && waves.Length > 0)
         {
-            wavesField.SetValue(enemySpawner, waves);
+            enemySpawner.ConfigureWaves(waves);
             Debug.Log($"[GameSceneController] Configured {waves.Length} waves");
         }
     }
