@@ -62,6 +62,7 @@ namespace NeuralBattalion.Player
             rb = GetComponent<Rigidbody2D>();
             rb.gravityScale = 0f; // 2D top-down, no gravity
             rb.freezeRotation = true;
+            rb.bodyType = RigidbodyType2D.Kinematic; // Prevent physics-based pushing
 
             if (tankData != null)
             {

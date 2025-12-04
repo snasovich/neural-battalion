@@ -66,6 +66,7 @@ namespace NeuralBattalion.Enemy
             rb = GetComponent<Rigidbody2D>();
             rb.gravityScale = 0f;
             rb.freezeRotation = true;
+            rb.bodyType = RigidbodyType2D.Kinematic; // Prevent physics-based pushing
 
             // Find sprite renderer if not assigned
             if (spriteRenderer == null)
