@@ -4,6 +4,7 @@ using NeuralBattalion.Data;
 using NeuralBattalion.Core.Events;
 using NeuralBattalion.Terrain;
 using NeuralBattalion.Utility;
+using NeuralBattalion.Enemy;
 
 namespace NeuralBattalion.Player
 {
@@ -32,8 +33,7 @@ namespace NeuralBattalion.Player
         [SerializeField] private float rotationSpeed = 180f;
 
         [Header("Collision Settings")]
-        [SerializeField] private float collisionCheckDistance = 0.6f;
-        [SerializeField] private LayerMask tankLayerMask;
+        [SerializeField] private float collisionCheckRadius = 0.4f;
 
         private Rigidbody2D rb;
         private TerrainManager terrainManager;
@@ -168,11 +168,20 @@ namespace NeuralBattalion.Player
                 }
             }
 
-            // Check tank-to-tank collision using raycast
-            RaycastHit2D hit = Physics2D.Raycast(rb.position, direction, collisionCheckDistance, tankLayerMask);
-            if (hit.collider != null && hit.collider.gameObject != gameObject)
+            // Check tank-to-tank collision using overlap check
+            Collider2D[] overlaps = Physics2D.OverlapCircleAll(targetPosition, collisionCheckRadius);
+            foreach (Collider2D overlap in overlaps)
             {
-                return false;
+                // Skip self
+                if (overlap.gameObject == gameObject)
+                    continue;
+
+                // Check if it's another tank (player or enemy)
+                if (overlap.GetComponent<PlayerController>() != null || 
+                    overlap.GetComponent<EnemyController>() != null)
+                {
+                    return false;
+                }
             }
 
             return true;
