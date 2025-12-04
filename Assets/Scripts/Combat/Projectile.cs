@@ -80,6 +80,8 @@ namespace NeuralBattalion.Combat
         public void Fire(Vector2 startPosition, Vector2 fireDirection, bool fromPlayer,
                         float projectileSpeed = -1, int projectileDamage = -1)
         {
+            Debug.Log($"[Projectile] Fire() called at {startPosition}, direction: {fireDirection}, fromPlayer: {fromPlayer}");
+            
             transform.position = startPosition;
             direction = fireDirection.normalized;
             isPlayerProjectile = fromPlayer;
@@ -89,6 +91,8 @@ namespace NeuralBattalion.Combat
             if (projectileSpeed > 0) speed = projectileSpeed;
             if (projectileDamage > 0) damage = projectileDamage;
 
+            Debug.Log($"[Projectile] Configured with speed: {speed}, damage: {damage}, direction: {direction}");
+
             // Rotate sprite to face direction
             float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg - 90f;
             transform.rotation = Quaternion.Euler(0, 0, angle);
@@ -97,6 +101,7 @@ namespace NeuralBattalion.Combat
             gameObject.tag = fromPlayer ? "PlayerProjectile" : "EnemyProjectile";
 
             gameObject.SetActive(true);
+            Debug.Log($"[Projectile] Projectile {gameObject.name} activated and ready to move");
         }
 
         private void OnTriggerEnter2D(Collider2D other)

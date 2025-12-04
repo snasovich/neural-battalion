@@ -73,15 +73,33 @@ namespace NeuralBattalion.Combat
         /// <returns>True if projectile was fired.</returns>
         public bool Fire(Vector2 position, Vector2 direction, bool isPlayer)
         {
+            Debug.Log($"[Weapon] Fire() called. Position: {position}, Direction: {direction}, isPlayer: {isPlayer}");
+            Debug.Log($"[Weapon] nextFireTime: {nextFireTime}, Time.time: {Time.time}, activeProjectiles: {activeProjectiles}/{maxActiveProjectiles}");
+            Debug.Log($"[Weapon] projectilePrefab: {projectilePrefab != null}");
+            
             // Check fire rate
-            if (Time.time < nextFireTime) return false;
+            if (Time.time < nextFireTime)
+            {
+                Debug.Log($"[Weapon] Fire rate cooldown active. Wait {nextFireTime - Time.time:F2}s");
+                return false;
+            }
 
             // Check max active projectiles
-            if (activeProjectiles >= maxActiveProjectiles) return false;
+            if (activeProjectiles >= maxActiveProjectiles)
+            {
+                Debug.Log($"[Weapon] Max active projectiles reached ({activeProjectiles}/{maxActiveProjectiles})");
+                return false;
+            }
 
             // Get projectile from pool or instantiate
             GameObject projectileObj = GetProjectile(position);
-            if (projectileObj == null) return false;
+            if (projectileObj == null)
+            {
+                Debug.LogError("[Weapon] Failed to get projectile object!");
+                return false;
+            }
+            
+            Debug.Log($"[Weapon] Got projectile object: {projectileObj.name}");
 
             // Initialize projectile
             Projectile projectile = projectileObj.GetComponent<Projectile>();
@@ -90,9 +108,14 @@ namespace NeuralBattalion.Combat
                 float speed = projectileSpeed * speedMultiplier;
                 int damage = Mathf.RoundToInt(projectileDamage * damageMultiplier);
 
+                Debug.Log($"[Weapon] Firing projectile with speed: {speed}, damage: {damage}");
                 projectile.Fire(position, direction, isPlayer, speed, damage);
                 projectile.SetCanDestroySteel(canDestroySteel);
                 projectile.SetOwnerWeapon(this);
+            }
+            else
+            {
+                Debug.LogError("[Weapon] Projectile component not found on projectile object!");
             }
 
             // Update state
@@ -102,6 +125,7 @@ namespace NeuralBattalion.Combat
             // Play sound
             PlayFireSound();
 
+            Debug.Log("[Weapon] Projectile fired successfully!");
             return true;
         }
 
@@ -110,12 +134,19 @@ namespace NeuralBattalion.Combat
         /// </summary>
         private GameObject GetProjectile(Vector2 position)
         {
+            Debug.Log($"[Weapon] GetProjectile() called. projectilePrefab: {projectilePrefab != null}");
+            
             // Try to get from object pool
             var pool = ObjectPool.Instance;
             if (pool != null && projectilePrefab != null)
             {
+                Debug.Log("[Weapon] Attempting to get projectile from object pool");
                 var pooledProjectile = pool.Get(projectilePrefab);
-                if (pooledProjectile != null) return pooledProjectile;
+                if (pooledProjectile != null)
+                {
+                    Debug.Log("[Weapon] Got projectile from pool");
+                    return pooledProjectile;
+                }
             }
 
             // Fallback: instantiate
@@ -125,7 +156,10 @@ namespace NeuralBattalion.Combat
                 return null;
             }
 
-            return Instantiate(projectilePrefab, position, Quaternion.identity);
+            Debug.Log($"[Weapon] Instantiating new projectile at {position}");
+            GameObject newProjectile = Instantiate(projectilePrefab, position, Quaternion.identity);
+            Debug.Log($"[Weapon] Created projectile: {newProjectile.name}");
+            return newProjectile;
         }
 
         /// <summary>

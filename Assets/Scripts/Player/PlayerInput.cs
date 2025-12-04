@@ -152,12 +152,23 @@ namespace NeuralBattalion.Player
         /// <returns>True if fire is pressed.</returns>
         public bool IsFirePressed()
         {
+            bool isPressed = false;
+            
             if (useNewInputSystem && fireAction != null)
             {
-                return fireAction.IsPressed();
+                isPressed = fireAction.IsPressed();
+            }
+            else
+            {
+                isPressed = firePressed;
+            }
+            
+            if (isPressed)
+            {
+                Debug.Log($"[PlayerInput] Fire button pressed! useNewInputSystem: {useNewInputSystem}, fireKey: {fireKey}");
             }
 
-            return firePressed;
+            return isPressed;
         }
 
         /// <summary>

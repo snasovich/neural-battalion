@@ -181,6 +181,21 @@ public class GameSceneController : MonoBehaviour
         // Add PlayerController (this should be last as it references other components)
         PlayerController controller = tankGO.AddComponent<PlayerController>();
         
+        // CRITICAL: Set the weapon reference on PlayerController using reflection
+        // The serialized field needs to be set for runtime-created objects
+        var controllerType = typeof(PlayerController);
+        var weaponField = controllerType.GetField("weapon", 
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        if (weaponField != null)
+        {
+            weaponField.SetValue(controller, weapon);
+            Debug.Log("[GameSceneController] Set weapon reference on PlayerController");
+        }
+        else
+        {
+            Debug.LogError("[GameSceneController] Failed to set weapon reference - field not found");
+        }
+        
         // Set player tag for collision detection
         tankGO.tag = "Player";
         
