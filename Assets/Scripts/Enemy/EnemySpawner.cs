@@ -172,28 +172,49 @@ namespace NeuralBattalion.Enemy
 
             // Select spawn point
             Transform spawnPoint = SelectSpawnPoint();
-            if (spawnPoint == null) return;
+            if (spawnPoint == null)
+            {
+                if (debugMode)
+                {
+                    Debug.LogWarning("[EnemySpawner] No available spawn points - will retry next cycle");
+                }
+                return;
+            }
 
             // Determine enemy type from wave data
             int enemyType = DetermineEnemyType();
 
             // Spawn enemy
             GameObject prefab = enemyPrefabs[Mathf.Clamp(enemyType, 0, enemyPrefabs.Length - 1)];
+            if (prefab == null)
+            {
+                Debug.LogError($"[EnemySpawner] Enemy prefab for type {enemyType} is null!");
+                return;
+            }
+            
             GameObject enemyObj = Instantiate(prefab, spawnPoint.position, spawnPoint.rotation);
+            enemyObj.name = $"Enemy_{nextEnemyId}_{EnemyTypes.GetName(enemyType)}";
 
             EnemyController enemy = enemyObj.GetComponent<EnemyController>();
             if (enemy != null)
             {
                 enemy.Initialize(nextEnemyId++, enemyType);
                 activeEnemies.Add(enemy);
+                
+                if (debugMode)
+                {
+                    Debug.Log($"[EnemySpawner] Spawned enemy {enemy.EnemyId} ({EnemyTypes.GetName(enemyType)}) " +
+                             $"at {spawnPoint.position} - Wave progress: {enemiesSpawnedThisWave}/{enemiesToSpawnThisWave}");
+                }
+            }
+            else
+            {
+                Debug.LogError("[EnemySpawner] Spawned enemy has no EnemyController component!");
+                Destroy(enemyObj);
+                return;
             }
 
             enemiesSpawnedThisWave++;
-
-            if (debugMode)
-            {
-                Debug.Log($"[EnemySpawner] Spawned enemy {enemy?.EnemyId} of type {enemyType}");
-            }
         }
 
         /// <summary>

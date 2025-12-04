@@ -94,6 +94,9 @@ namespace NeuralBattalion.Enemy
             isAlive = true;
             isFrozen = false;
 
+            Debug.Log($"[EnemyController] Enemy {enemyId} initialized - Type: {EnemyTypes.GetName(type)}, " +
+                     $"Health: {health}, Speed: {moveSpeed}, Position: {transform.position}");
+
             EventBus.Publish(new EnemySpawnedEvent { EnemyId = enemyId, EnemyType = enemyType });
         }
 
@@ -141,7 +144,8 @@ namespace NeuralBattalion.Enemy
 
             // Move forward
             Vector2 movement = snappedDirection * moveSpeed * Time.fixedDeltaTime;
-            rb.MovePosition(rb.position + movement);
+            Vector2 newPosition = rb.position + movement;
+            rb.MovePosition(newPosition);
         }
 
         /// <summary>
