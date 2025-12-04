@@ -2,6 +2,8 @@ using UnityEngine;
 using NeuralBattalion.Combat;
 using NeuralBattalion.Data;
 using NeuralBattalion.Core.Events;
+using NeuralBattalion.Terrain;
+using NeuralBattalion.Utility;
 
 namespace NeuralBattalion.Enemy
 {
@@ -29,7 +31,12 @@ namespace NeuralBattalion.Enemy
         [SerializeField] private int enemyType;
         [SerializeField] private int scoreValue = 100;
 
+        [Header("Collision Settings")]
+        [SerializeField] private float collisionCheckDistance = 0.6f;
+        [SerializeField] private LayerMask tankLayerMask;
+
         private Rigidbody2D rb;
+        private TerrainManager terrainManager;
         private Vector2 moveDirection;
         private float moveSpeed = 3f;
         private float rotationSpeed = 180f;
@@ -69,6 +76,13 @@ namespace NeuralBattalion.Enemy
             if (enemyAI == null)
             {
                 enemyAI = GetComponent<EnemyAI>();
+            }
+
+            // Find TerrainManager
+            terrainManager = FindObjectOfType<TerrainManager>();
+            if (terrainManager == null)
+            {
+                Debug.LogWarning("[EnemyController] TerrainManager not found - collision detection will be disabled");
             }
         }
 
@@ -195,9 +209,42 @@ namespace NeuralBattalion.Enemy
             float newAngle = Mathf.MoveTowardsAngle(currentAngle, targetAngle, rotationSpeed * Time.fixedDeltaTime);
             rb.MoveRotation(newAngle);
 
-            // Move forward
+            // Calculate intended movement
             Vector2 movement = snappedDirection * moveSpeed * Time.fixedDeltaTime;
-            rb.MovePosition(rb.position + movement);
+            Vector2 targetPosition = rb.position + movement;
+
+            // Check if movement is valid (no terrain or tank collision)
+            if (CanMoveTo(targetPosition, snappedDirection))
+            {
+                rb.MovePosition(targetPosition);
+            }
+        }
+
+        /// <summary>
+        /// Check if the tank can move to a target position without colliding.
+        /// </summary>
+        /// <param name="targetPosition">The target position to check.</param>
+        /// <param name="direction">The direction of movement.</param>
+        /// <returns>True if the position is valid.</returns>
+        private bool CanMoveTo(Vector2 targetPosition, Vector2 direction)
+        {
+            // Check terrain collision for tank-sized area
+            if (terrainManager != null)
+            {
+                if (!terrainManager.IsTankPositionPassable(targetPosition))
+                {
+                    return false;
+                }
+            }
+
+            // Check tank-to-tank collision using raycast
+            RaycastHit2D hit = Physics2D.Raycast(rb.position, direction, collisionCheckDistance, tankLayerMask);
+            if (hit.collider != null && hit.collider.gameObject != gameObject)
+            {
+                return false;
+            }
+
+            return true;
         }
 
         /// <summary>

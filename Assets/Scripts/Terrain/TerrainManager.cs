@@ -339,6 +339,38 @@ namespace NeuralBattalion.Terrain
         }
 
         /// <summary>
+        /// Check if a tank-sized area at a world position is passable.
+        /// Checks multiple points around the tank's bounds.
+        /// </summary>
+        /// <param name="worldPos">Center position of the tank.</param>
+        /// <param name="tankSize">Size of the tank (width and height).</param>
+        /// <returns>True if all checked positions are passable.</returns>
+        public bool IsTankPositionPassable(Vector2 worldPos, float tankSize = 0.8f)
+        {
+            // Check center
+            if (!IsPositionPassable(worldPos))
+                return false;
+
+            // Check corners
+            float halfSize = tankSize * 0.5f;
+            Vector2[] corners = new Vector2[]
+            {
+                worldPos + new Vector2(halfSize, halfSize),
+                worldPos + new Vector2(halfSize, -halfSize),
+                worldPos + new Vector2(-halfSize, halfSize),
+                worldPos + new Vector2(-halfSize, -halfSize)
+            };
+
+            foreach (var corner in corners)
+            {
+                if (!IsPositionPassable(corner))
+                    return false;
+            }
+
+            return true;
+        }
+
+        /// <summary>
         /// Fortify the base with steel walls (Shovel power-up).
         /// </summary>
         /// <param name="baseTiles">Array of grid positions around the base.</param>
