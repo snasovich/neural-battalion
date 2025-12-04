@@ -108,12 +108,13 @@ public class GameSceneController : MonoBehaviour
         
         // Configure player controller with tank data
         PlayerController playerController = playerInstance.GetComponent<PlayerController>();
+        if (playerController != null && playerTankData != null)
+        {
+            playerController.SetTankData(playerTankData);
+        }
+        
         if (playerController != null)
         {
-            if (playerTankData != null)
-            {
-                playerController.SetTankData(playerTankData);
-            }
             Debug.Log($"[GameSceneController] Player tank spawned at position {spawnWorldPos}");
         }
         else
@@ -148,9 +149,11 @@ public class GameSceneController : MonoBehaviour
         spriteRenderer.sortingOrder = 10;
         
         // Add PlayerInput
+        // PlayerInput will auto-configure using legacy Input Manager (WASD/Arrow keys)
         tankGO.AddComponent<PlayerInput>();
         
         // Add PlayerHealth
+        // PlayerHealth uses default values: 3 starting lives, 2s respawn delay
         PlayerHealth health = tankGO.AddComponent<PlayerHealth>();
         
         // Add Weapon
