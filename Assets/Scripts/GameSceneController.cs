@@ -4,6 +4,7 @@ using NeuralBattalion.Terrain;
 using NeuralBattalion.Player;
 using NeuralBattalion.Combat;
 using NeuralBattalion.Enemy;
+using NeuralBattalion.Utility;
 
 /// <summary>
 /// Controller for the GameScene that initializes and loads the level.
@@ -26,6 +27,9 @@ public class GameSceneController : MonoBehaviour
     [Header("Player Settings")]
     [SerializeField] private GameObject playerTankPrefab;
     [SerializeField] private TankData playerTankData;
+    
+    [Header("Combat Settings")]
+    [SerializeField] private GameObject projectilePrefab;
     
     private GameObject playerInstance;
     private LevelData currentLevel;
@@ -168,8 +172,14 @@ public class GameSceneController : MonoBehaviour
         weaponGO.transform.localPosition = Vector3.zero;
         Weapon weapon = weaponGO.AddComponent<Weapon>();
         
+        // Configure weapon with projectile prefab
+        ConfigureWeapon(weapon);
+        
         // Add PlayerController (this should be last as it references other components)
         PlayerController controller = tankGO.AddComponent<PlayerController>();
+        
+        // Set player tag for collision detection
+        tankGO.tag = "Player";
         
         Debug.Log("[GameSceneController] Created player tank at runtime");
         
@@ -207,6 +217,36 @@ public class GameSceneController : MonoBehaviour
         
         texture.Apply();
         return Sprite.Create(texture, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), size);
+    }
+    
+    /// <summary>
+    /// Configure the weapon with a projectile prefab.
+    /// </summary>
+    private void ConfigureWeapon(Weapon weapon)
+    {
+        if (weapon == null) return;
+        
+        // Create or load projectile prefab
+        if (projectilePrefab == null)
+        {
+            Debug.Log("[GameSceneController] Creating projectile prefab at runtime");
+            projectilePrefab = PrefabFactory.CreateProjectilePrefab(true);
+        }
+        
+        // Use reflection to set the private projectilePrefab field
+        var weaponType = typeof(Weapon);
+        var projectilePrefabField = weaponType.GetField("projectilePrefab", 
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        
+        if (projectilePrefabField != null)
+        {
+            projectilePrefabField.SetValue(weapon, projectilePrefab);
+            Debug.Log("[GameSceneController] Configured weapon with projectile prefab");
+        }
+        else
+        {
+            Debug.LogError("[GameSceneController] Failed to configure weapon - projectilePrefab field not found");
+        }
     }
     
     /// <summary>

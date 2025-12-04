@@ -34,9 +34,13 @@ namespace NeuralBattalion.Terrain
         [SerializeField] private int gridHeight = 26;
         [SerializeField] private Vector2 cellSize = Vector2.one;
 
+        [Header("Destructible Terrain")]
+        [SerializeField] private GameObject destructibleTerrainPrefab;
+
         // Internal grid data
         private TileType[,] tileGrid;
         private int[,] tileHealth; // For destructible tiles
+        private GameObject[,] destructibleObjects; // Track destructible terrain GameObjects
 
         public int GridWidth => gridWidth;
         public int GridHeight => gridHeight;
@@ -58,6 +62,7 @@ namespace NeuralBattalion.Terrain
         {
             tileGrid = new TileType[gridWidth, gridHeight];
             tileHealth = new int[gridWidth, gridHeight];
+            destructibleObjects = new GameObject[gridWidth, gridHeight];
 
             // Initialize all tiles as empty
             for (int x = 0; x < gridWidth; x++)
@@ -66,7 +71,47 @@ namespace NeuralBattalion.Terrain
                 {
                     tileGrid[x, y] = TileType.Empty;
                     tileHealth[x, y] = 0;
+                    destructibleObjects[x, y] = null;
                 }
+            }
+            
+            // Setup colliders on tilemaps
+            SetupTilemapColliders();
+        }
+        
+        /// <summary>
+        /// Setup colliders on tilemaps for projectile collision.
+        /// </summary>
+        private void SetupTilemapColliders()
+        {
+            if (obstacleTilemap != null)
+            {
+                // Add TilemapCollider2D if not present
+                var collider = obstacleTilemap.GetComponent<TilemapCollider2D>();
+                if (collider == null)
+                {
+                    collider = obstacleTilemap.gameObject.AddComponent<TilemapCollider2D>();
+                    collider.usedByComposite = false;
+                }
+                
+                // Set as trigger for projectiles to detect
+                var compositCollider = obstacleTilemap.GetComponent<CompositeCollider2D>();
+                if (compositCollider != null)
+                {
+                    compositCollider.isTrigger = true;
+                }
+                else
+                {
+                    collider.isTrigger = true;
+                }
+                
+                // Set appropriate tag
+                if (obstacleTilemap.gameObject.tag == "Untagged")
+                {
+                    obstacleTilemap.gameObject.tag = "Wall";
+                }
+                
+                Debug.Log("[TerrainManager] Setup collider on obstacle tilemap");
             }
         }
 
@@ -135,13 +180,22 @@ namespace NeuralBattalion.Terrain
 
             Vector3Int tilemapPos = new Vector3Int(gridPos.x, gridPos.y, 0);
 
+            // Remove existing destructible object if present
+            if (destructibleObjects[gridPos.x, gridPos.y] != null)
+            {
+                Destroy(destructibleObjects[gridPos.x, gridPos.y]);
+                destructibleObjects[gridPos.x, gridPos.y] = null;
+            }
+
             switch (tileType)
             {
                 case TileType.Brick:
                     obstacleTilemap?.SetTile(tilemapPos, brickTile);
+                    CreateDestructibleTerrainObject(gridPos, TileType.Brick);
                     break;
                 case TileType.Steel:
                     obstacleTilemap?.SetTile(tilemapPos, steelTile);
+                    CreateDestructibleTerrainObject(gridPos, TileType.Steel);
                     break;
                 case TileType.Water:
                     groundTilemap?.SetTile(tilemapPos, waterTile);
@@ -157,6 +211,53 @@ namespace NeuralBattalion.Terrain
                     groundTilemap?.SetTile(tilemapPos, groundTile);
                     break;
             }
+        }
+        
+        /// <summary>
+        /// Create a destructible terrain GameObject at the specified position.
+        /// </summary>
+        private void CreateDestructibleTerrainObject(Vector2Int gridPos, TileType tileType)
+        {
+            Vector2 worldPos = GridToWorldPosition(gridPos);
+            
+            GameObject terrainObj = new GameObject($"DestructibleTerrain_{gridPos.x}_{gridPos.y}");
+            terrainObj.transform.position = worldPos;
+            terrainObj.transform.parent = obstacleTilemap?.transform;
+            
+            // Add BoxCollider2D as trigger
+            BoxCollider2D collider = terrainObj.AddComponent<BoxCollider2D>();
+            collider.size = cellSize * 0.95f; // Slightly smaller to prevent overlaps
+            collider.isTrigger = true;
+            
+            // Add DestructibleTerrain component
+            DestructibleTerrain destructible = terrainObj.AddComponent<DestructibleTerrain>();
+            
+            // Use reflection to set private fields
+            var terrainType = typeof(DestructibleTerrain);
+            var tileTypeField = terrainType.GetField("tileType", 
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            var maxHealthField = terrainType.GetField("maxHealth", 
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            
+            if (tileTypeField != null)
+            {
+                tileTypeField.SetValue(destructible, tileType);
+            }
+            
+            if (maxHealthField != null)
+            {
+                int health = GetTileMaxHealth(tileType);
+                maxHealthField.SetValue(destructible, health);
+            }
+            
+            // Subscribe to destruction event
+            destructible.gameObject.name += $"_{tileType}";
+            
+            // Store reference
+            destructibleObjects[gridPos.x, gridPos.y] = terrainObj;
+            
+            // Tag appropriately
+            terrainObj.tag = "DestructibleTerrain";
         }
 
         /// <summary>
@@ -217,6 +318,13 @@ namespace NeuralBattalion.Terrain
         private void DestroyTile(Vector2Int gridPos)
         {
             TileType previousType = tileGrid[gridPos.x, gridPos.y];
+
+            // Destroy the destructible terrain object
+            if (destructibleObjects[gridPos.x, gridPos.y] != null)
+            {
+                Destroy(destructibleObjects[gridPos.x, gridPos.y]);
+                destructibleObjects[gridPos.x, gridPos.y] = null;
+            }
 
             SetTile(gridPos, TileType.Empty);
 
