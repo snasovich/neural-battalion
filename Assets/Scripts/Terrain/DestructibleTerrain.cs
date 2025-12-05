@@ -48,12 +48,25 @@ namespace NeuralBattalion.Terrain
         /// </summary>
         /// <param name="type">Tile type.</param>
         /// <param name="health">Maximum health.</param>
-        public void Initialize(TileType type, int health)
+        /// <param name="renderer">Optional sprite renderer for visual feedback.</param>
+        /// <param name="sprites">Optional damage state sprites.</param>
+        public void Initialize(TileType type, int health, SpriteRenderer renderer = null, Sprite[] sprites = null)
         {
             tileType = type;
             maxHealth = health;
             currentHealth = maxHealth;
             isDestroyed = false;
+            
+            // Setup visuals if provided
+            if (renderer != null)
+            {
+                spriteRenderer = renderer;
+            }
+            
+            if (sprites != null && sprites.Length > 0)
+            {
+                damageSprites = sprites;
+            }
         }
 
         /// <summary>

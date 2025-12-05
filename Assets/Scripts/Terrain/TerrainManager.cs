@@ -266,10 +266,26 @@ namespace NeuralBattalion.Terrain
             collider.size = cellSize * 0.95f; // Slightly smaller to prevent overlaps
             collider.isTrigger = true;
             
+            // Add SpriteRenderer for visual feedback
+            SpriteRenderer spriteRenderer = terrainObj.AddComponent<SpriteRenderer>();
+            spriteRenderer.sortingLayerName = "Default";
+            spriteRenderer.sortingOrder = 5; // Above ground, below tanks
+            
+            // Create damage state sprites
+            Color baseColor = tileType == TileType.Brick ? new Color(0.8f, 0.3f, 0.2f) : new Color(0.6f, 0.6f, 0.6f);
+            Color damagedColor = tileType == TileType.Brick ? new Color(0.5f, 0.2f, 0.1f) : new Color(0.4f, 0.4f, 0.4f);
+            
+            Sprite[] damageSprites = new Sprite[2];
+            damageSprites[0] = SpriteGenerator.CreateColoredSprite(baseColor, 16, 16, 100f); // Full health
+            damageSprites[1] = SpriteGenerator.CreateColoredSprite(damagedColor, 16, 16, 100f); // Damaged
+            
+            // Set initial sprite
+            spriteRenderer.sprite = damageSprites[0];
+            
             // Add DestructibleTerrain component and initialize it
             DestructibleTerrain destructible = terrainObj.AddComponent<DestructibleTerrain>();
             int health = GetTileMaxHealth(tileType);
-            destructible.Initialize(tileType, health);
+            destructible.Initialize(tileType, health, spriteRenderer, damageSprites);
             
             // Store reference
             destructibleObjects[gridPos.x, gridPos.y] = terrainObj;
