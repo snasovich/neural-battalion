@@ -259,7 +259,14 @@ namespace NeuralBattalion.Player
         private void Fire()
         {
             lastShotTime = Time.time;
-            weapon?.Fire(transform.position, transform.up, true);
+            
+            if (weapon == null)
+            {
+                Debug.LogError("[PlayerController] Weapon is NULL! Cannot fire projectile.");
+                return;
+            }
+            
+            weapon.Fire(transform.position, transform.up, true);
 
             EventBus.Publish(new ProjectileFiredEvent
             {

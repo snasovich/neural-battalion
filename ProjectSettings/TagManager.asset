@@ -3,7 +3,14 @@
 --- !u!78 &1
 TagManager:
   serializedVersion: 2
-  tags: []
+  tags:
+  - Player
+  - Enemy
+  - PlayerProjectile
+  - EnemyProjectile
+  - Wall
+  - Obstacle
+  - DestructibleTerrain
   layers:
   - Default
   - TransparentFX

@@ -4,6 +4,8 @@ using NeuralBattalion.Terrain;
 using NeuralBattalion.Player;
 using NeuralBattalion.Combat;
 using NeuralBattalion.Enemy;
+using NeuralBattalion.Utility;
+using NeuralBattalion.Core.Events;
 
 /// <summary>
 /// Controller for the GameScene that initializes and loads the level.
@@ -27,15 +29,13 @@ public class GameSceneController : MonoBehaviour
     [SerializeField] private GameObject playerTankPrefab;
     [SerializeField] private TankData playerTankData;
     
+    [Header("Combat Settings")]
+    [SerializeField] private GameObject projectilePrefab;
+    
     private GameObject playerInstance;
     private LevelData currentLevel;
     
-    private void Start()
-    {
-        Debug.Log("[GameSceneController] GameScene started");
-        LoadLevel();
-        InitializeEnemySystem();
-    }
+
     
     /// <summary>
     /// Load the specified level from Resources.
@@ -104,6 +104,13 @@ public class GameSceneController : MonoBehaviour
             // Use assigned prefab
             playerInstance = Instantiate(playerTankPrefab, spawnWorldPos, Quaternion.identity);
             playerInstance.name = "PlayerTank";
+            
+            // Configure weapon if prefab already has one
+            Weapon weapon = playerInstance.GetComponentInChildren<Weapon>();
+            if (weapon != null)
+            {
+                ConfigureWeapon(weapon);
+            }
         }
         else
         {
@@ -168,8 +175,29 @@ public class GameSceneController : MonoBehaviour
         weaponGO.transform.localPosition = Vector3.zero;
         Weapon weapon = weaponGO.AddComponent<Weapon>();
         
+        // Configure weapon with projectile prefab
+        ConfigureWeapon(weapon);
+        
         // Add PlayerController (this should be last as it references other components)
         PlayerController controller = tankGO.AddComponent<PlayerController>();
+        
+        // CRITICAL: Set the weapon reference on PlayerController using reflection
+        // The serialized field needs to be set for runtime-created objects
+        var controllerType = typeof(PlayerController);
+        var weaponField = controllerType.GetField("weapon", 
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        if (weaponField != null)
+        {
+            weaponField.SetValue(controller, weapon);
+            Debug.Log("[GameSceneController] Set weapon reference on PlayerController");
+        }
+        else
+        {
+            Debug.LogError("[GameSceneController] Failed to set weapon reference - field not found");
+        }
+        
+        // Set player tag for collision detection
+        tankGO.tag = "Player";
         
         Debug.Log("[GameSceneController] Created player tank at runtime");
         
@@ -207,6 +235,86 @@ public class GameSceneController : MonoBehaviour
         
         texture.Apply();
         return Sprite.Create(texture, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), size);
+    }
+    
+    /// <summary>
+    /// Configure the weapon with a projectile prefab.
+    /// </summary>
+    /// <param name="weapon">Weapon to configure.</param>
+    /// <param name="isPlayer">Whether this is a player weapon (affects projectile appearance).</param>
+    private void ConfigureWeapon(Weapon weapon, bool isPlayer = true)
+    {
+        if (weapon == null) return;
+        
+        // Create appropriate projectile prefab based on weapon owner
+        GameObject prefabToUse;
+        if (isPlayer)
+        {
+            // Create or use player projectile prefab
+            if (projectilePrefab == null)
+            {
+                Debug.Log("[GameSceneController] Creating player projectile prefab at runtime");
+                projectilePrefab = PrefabFactory.CreateProjectilePrefab(true);
+            }
+            prefabToUse = projectilePrefab;
+        }
+        else
+        {
+            // Create enemy projectile prefab (different visual)
+            Debug.Log("[GameSceneController] Creating enemy projectile prefab at runtime");
+            prefabToUse = PrefabFactory.CreateProjectilePrefab(false);
+        }
+        
+        // Use reflection to set the private projectilePrefab field
+        var weaponType = typeof(Weapon);
+        var projectilePrefabField = weaponType.GetField("projectilePrefab", 
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        
+        if (projectilePrefabField != null)
+        {
+            projectilePrefabField.SetValue(weapon, prefabToUse);
+            Debug.Log($"[GameSceneController] Configured {(isPlayer ? "player" : "enemy")} weapon with projectile prefab");
+        }
+        else
+        {
+            Debug.LogError("[GameSceneController] Failed to configure weapon - projectilePrefab field not found");
+        }
+    }
+    
+    private void Start()
+    {
+        Debug.Log("[GameSceneController] GameScene started");
+        LoadLevel();
+        InitializeEnemySystem();
+        
+        // Subscribe to enemy spawn events to configure their weapons
+        EventBus.Subscribe<EnemySpawnedEvent>(OnEnemySpawned);
+    }
+    
+    private void OnDestroy()
+    {
+        EventBus.Unsubscribe<EnemySpawnedEvent>(OnEnemySpawned);
+    }
+    
+    /// <summary>
+    /// Handle enemy spawned event to configure weapon.
+    /// </summary>
+    private void OnEnemySpawned(EnemySpawnedEvent evt)
+    {
+        // Find the enemy that was just spawned and configure its weapon
+        var enemies = FindObjectsOfType<EnemyController>();
+        foreach (var enemy in enemies)
+        {
+            if (enemy.EnemyId == evt.EnemyId)
+            {
+                Weapon weapon = enemy.GetComponentInChildren<Weapon>();
+                if (weapon != null)
+                {
+                    ConfigureWeapon(weapon, false);
+                }
+                break;
+            }
+        }
     }
     
     /// <summary>

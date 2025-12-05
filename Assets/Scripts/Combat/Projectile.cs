@@ -117,7 +117,6 @@ namespace NeuralBattalion.Combat
         private void HandleCollision(Collider2D other)
         {
             hasHit = true;
-
             Vector2 hitPosition = transform.position;
 
             // Hit player
@@ -215,14 +214,18 @@ namespace NeuralBattalion.Combat
         /// </summary>
         public void Despawn()
         {
-            if (hasHit) return;
-
+            // Check if already inactive/despawned to prevent double-despawn
+            if (!gameObject.activeInHierarchy) return;
+            
             hasHit = true;
             gameObject.SetActive(false);
 
             // Notify owner weapon
-            ownerWeapon?.OnProjectileDestroyed();
-            ownerWeapon = null;
+            if (ownerWeapon != null)
+            {
+                ownerWeapon.OnProjectileDestroyed();
+                ownerWeapon = null;
+            }
 
             // Try to return to pool first, otherwise destroy
             var pool = ObjectPool.Instance;

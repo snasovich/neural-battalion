@@ -74,14 +74,24 @@ namespace NeuralBattalion.Combat
         public bool Fire(Vector2 position, Vector2 direction, bool isPlayer)
         {
             // Check fire rate
-            if (Time.time < nextFireTime) return false;
+            if (Time.time < nextFireTime)
+            {
+                return false;
+            }
 
             // Check max active projectiles
-            if (activeProjectiles >= maxActiveProjectiles) return false;
+            if (activeProjectiles >= maxActiveProjectiles)
+            {
+                return false;
+            }
 
             // Get projectile from pool or instantiate
             GameObject projectileObj = GetProjectile(position);
-            if (projectileObj == null) return false;
+            if (projectileObj == null)
+            {
+                Debug.LogError("[Weapon] Failed to get projectile object!");
+                return false;
+            }
 
             // Initialize projectile
             Projectile projectile = projectileObj.GetComponent<Projectile>();
@@ -93,6 +103,11 @@ namespace NeuralBattalion.Combat
                 projectile.Fire(position, direction, isPlayer, speed, damage);
                 projectile.SetCanDestroySteel(canDestroySteel);
                 projectile.SetOwnerWeapon(this);
+            }
+            else
+            {
+                Debug.LogError("[Weapon] Projectile component not found on projectile object!");
+                return false;
             }
 
             // Update state
@@ -115,7 +130,10 @@ namespace NeuralBattalion.Combat
             if (pool != null && projectilePrefab != null)
             {
                 var pooledProjectile = pool.Get(projectilePrefab);
-                if (pooledProjectile != null) return pooledProjectile;
+                if (pooledProjectile != null)
+                {
+                    return pooledProjectile;
+                }
             }
 
             // Fallback: instantiate

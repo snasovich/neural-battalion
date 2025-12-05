@@ -41,6 +41,33 @@ namespace NeuralBattalion.Terrain
                 spriteRenderer = GetComponent<SpriteRenderer>();
             }
         }
+        
+        /// <summary>
+        /// Initialize the destructible terrain with type and health.
+        /// Call this after instantiation to properly set up the component.
+        /// </summary>
+        /// <param name="type">Tile type.</param>
+        /// <param name="health">Maximum health.</param>
+        /// <param name="renderer">Optional sprite renderer for visual feedback.</param>
+        /// <param name="sprites">Optional damage state sprites.</param>
+        public void Initialize(TileType type, int health, SpriteRenderer renderer = null, Sprite[] sprites = null)
+        {
+            tileType = type;
+            maxHealth = health;
+            currentHealth = maxHealth;
+            isDestroyed = false;
+            
+            // Setup visuals if provided
+            if (renderer != null)
+            {
+                spriteRenderer = renderer;
+            }
+            
+            if (sprites != null && sprites.Length > 0)
+            {
+                damageSprites = sprites;
+            }
+        }
 
         /// <summary>
         /// Take damage from a projectile.
@@ -140,7 +167,6 @@ namespace NeuralBattalion.Terrain
 
             // Disable or destroy game object
             gameObject.SetActive(false);
-            // Or: Destroy(gameObject);
         }
 
         /// <summary>
