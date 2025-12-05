@@ -41,7 +41,12 @@ namespace NeuralBattalion.Player
 
         private Rigidbody2D rb;
         private TerrainManager terrainManager;
+        private LevelBoundary levelBoundary;
         private Collider2D[] overlapBuffer = new Collider2D[OVERLAP_BUFFER_SIZE];
+        
+        // Directional sprites
+        private TankSpriteManager.DirectionalSprites directionalSprites;
+        private TankSpriteManager.Direction currentDirection = TankSpriteManager.Direction.Up;
         
         // Cache for tank component checks
         // Note: This cache grows as new tanks are encountered. In typical gameplay with limited tanks,
@@ -88,6 +93,16 @@ namespace NeuralBattalion.Player
                 Debug.LogWarning("[PlayerController] TerrainManager not found - collision detection will be disabled");
             }
 
+            // Find LevelBoundary
+            levelBoundary = FindObjectOfType<LevelBoundary>();
+            if (levelBoundary == null)
+            {
+                Debug.LogWarning("[PlayerController] LevelBoundary not found - boundary collision will be disabled");
+            }
+
+            // Create directional sprites
+            CreateDirectionalSprites();
+
             EventBus.Publish(new PlayerSpawnedEvent { Lives = playerHealth?.CurrentLives ?? 3 });
         }
 
@@ -122,6 +137,34 @@ namespace NeuralBattalion.Player
             {
                 weapon.Configure(tankData);
             }
+
+            // Recreate directional sprites with tank color
+            CreateDirectionalSprites();
+        }
+
+        /// <summary>
+        /// Create directional sprites for the tank.
+        /// </summary>
+        private void CreateDirectionalSprites()
+        {
+            if (spriteRenderer == null) return;
+
+            Color tankColor = tankData?.TankColor ?? Color.green;
+            directionalSprites = TankSpriteManager.CreateDirectionalSprites(tankColor, 32);
+
+            // Set initial sprite
+            UpdateSpriteDirection(currentDirection);
+        }
+
+        /// <summary>
+        /// Update the sprite to match the current direction.
+        /// </summary>
+        private void UpdateSpriteDirection(TankSpriteManager.Direction direction)
+        {
+            if (directionalSprites == null || spriteRenderer == null) return;
+
+            currentDirection = direction;
+            spriteRenderer.sprite = directionalSprites.GetSprite(direction);
         }
 
         /// <summary>
@@ -147,7 +190,14 @@ namespace NeuralBattalion.Player
             // Tank moves in 4 directions only (classic Battle City style)
             Vector2 snappedDirection = SnapToCardinalDirection(moveDirection);
 
-            // Rotate to face movement direction
+            // Update sprite direction based on movement
+            TankSpriteManager.Direction newDirection = TankSpriteManager.GetDirectionFromVector(snappedDirection);
+            if (newDirection != currentDirection)
+            {
+                UpdateSpriteDirection(newDirection);
+            }
+
+            // Rotate to face movement direction (for transform.up to be used in shooting)
             float targetAngle = Mathf.Atan2(snappedDirection.y, snappedDirection.x) * Mathf.Rad2Deg - 90f;
             float currentAngle = rb.rotation;
             float newAngle = Mathf.MoveTowardsAngle(currentAngle, targetAngle, rotationSpeed * Time.fixedDeltaTime);
@@ -157,7 +207,7 @@ namespace NeuralBattalion.Player
             Vector2 movement = snappedDirection * moveSpeed * speedModifier * Time.fixedDeltaTime;
             Vector2 targetPosition = rb.position + movement;
 
-            // Check if movement is valid (no terrain or tank collision)
+            // Check if movement is valid (no terrain, tank collision, or boundary)
             if (CanMoveTo(targetPosition))
             {
                 rb.MovePosition(targetPosition);
@@ -171,6 +221,15 @@ namespace NeuralBattalion.Player
         /// <returns>True if the position is valid.</returns>
         private bool CanMoveTo(Vector2 targetPosition)
         {
+            // Check level boundaries
+            if (levelBoundary != null)
+            {
+                if (!levelBoundary.IsTankWithinBounds(targetPosition, collisionCheckRadius * 2))
+                {
+                    return false;
+                }
+            }
+
             // Check terrain collision for tank-sized area
             if (terrainManager != null)
             {
