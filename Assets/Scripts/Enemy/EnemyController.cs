@@ -35,6 +35,8 @@ namespace NeuralBattalion.Enemy
         [Header("Collision Settings")]
         [SerializeField] private float collisionCheckRadius = 0.45f;
         
+        // Buffer size for overlap detection - 10 is sufficient for typical scenarios where
+        // a tank would rarely have more than 2-3 other tanks within collision radius
         private const int OVERLAP_BUFFER_SIZE = 10;
 
         private Rigidbody2D rb;
