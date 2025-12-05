@@ -34,9 +34,6 @@ namespace NeuralBattalion.Enemy
 
         [Header("Collision Settings")]
         [SerializeField] private float collisionCheckRadius = 0.5f;
-        [SerializeField] private float collisionCheckDistance = 0.6f;
-        
-        private const float MIN_MOVEMENT_THRESHOLD = 0.0001f;
 
         private Rigidbody2D rb;
         private TerrainManager terrainManager;
@@ -247,25 +244,13 @@ namespace NeuralBattalion.Enemy
                 }
             }
 
-            // Calculate movement direction
-            Vector2 moveDelta = targetPosition - rb.position;
-            
-            // Skip collision check if not actually moving
-            if (moveDelta.sqrMagnitude > MIN_MOVEMENT_THRESHOLD)
+            // First check if target position would overlap with any tank
+            Collider2D overlapCheck = Physics2D.OverlapCircle(targetPosition, collisionCheckRadius);
+            if (overlapCheck != null && overlapCheck.gameObject != gameObject)
             {
-                Vector2 moveDir = moveDelta.normalized;
-                
-                // Check tank-to-tank collision using directional raycast
-                // This allows movement perpendicular to obstacles while blocking direct collision
-                RaycastHit2D hit = Physics2D.CircleCast(rb.position, collisionCheckRadius, moveDir, collisionCheckDistance);
-                
-                if (hit.collider != null && hit.collider.gameObject != gameObject)
+                if (IsTank(overlapCheck.gameObject))
                 {
-                    // Check if it's another tank using cached component checks
-                    if (IsTank(hit.collider.gameObject))
-                    {
-                        return false;
-                    }
+                    return false;
                 }
             }
 
