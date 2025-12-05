@@ -124,34 +124,30 @@ namespace NeuralBattalion.Terrain
         /// </summary>
         private void SetupTilemapColliders()
         {
+            // NOTE: We are NOT adding TilemapCollider2D to the obstacle tilemap
+            // because we use individual DestructibleTerrain GameObjects with their own colliders
+            // for brick and steel tiles. The TilemapCollider2D would interfere with those
+            // individual colliders and prevent proper collision detection.
+            
             if (obstacleTilemap != null)
             {
-                // Add TilemapCollider2D if not present
+                // Remove TilemapCollider2D if it exists (might have been added in editor)
                 var collider = obstacleTilemap.GetComponent<TilemapCollider2D>();
-                if (collider == null)
+                if (collider != null)
                 {
-                    collider = obstacleTilemap.gameObject.AddComponent<TilemapCollider2D>();
-                    collider.usedByComposite = false;
+                    Debug.Log("[TerrainManager] Removing TilemapCollider2D from obstacle tilemap (using individual terrain colliders instead)");
+                    Destroy(collider);
                 }
                 
-                // Set as trigger for projectiles to detect
+                // Also remove CompositeCollider2D if it exists
                 var compositeCollider = obstacleTilemap.GetComponent<CompositeCollider2D>();
                 if (compositeCollider != null)
                 {
-                    compositeCollider.isTrigger = true;
-                }
-                else
-                {
-                    collider.isTrigger = true;
+                    Debug.Log("[TerrainManager] Removing CompositeCollider2D from obstacle tilemap");
+                    Destroy(compositeCollider);
                 }
                 
-                // Set appropriate tag
-                if (obstacleTilemap.gameObject.tag == "Untagged")
-                {
-                    obstacleTilemap.gameObject.tag = "Wall";
-                }
-                
-                Debug.Log("[TerrainManager] Setup collider on obstacle tilemap");
+                Debug.Log("[TerrainManager] Obstacle tilemap configured for individual terrain colliders");
             }
         }
 
