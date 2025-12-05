@@ -256,13 +256,14 @@ namespace NeuralBattalion.Enemy
                 {
                     if (IsTank(overlap.gameObject))
                     {
-                        // Found a tank at target position - check if we're moving away or toward it
-                        Vector2 toOtherTank = (Vector2)overlap.transform.position - rb.position;
-                        Vector2 moveDirection = targetPosition - rb.position;
+                        // Found a tank at target position - check if moving would decrease distance
+                        Vector2 otherPos = overlap.transform.position;
+                        float currentDist = Vector2.Distance(rb.position, otherPos);
+                        float targetDist = Vector2.Distance(targetPosition, otherPos);
                         
-                        // If moving toward the other tank (dot product > 0), block movement
-                        // If moving away (dot product < 0), allow it to separate
-                        if (Vector2.Dot(moveDirection.normalized, toOtherTank.normalized) > 0)
+                        // Only block if target position would be closer to the other tank
+                        // This allows separation while preventing overlap
+                        if (targetDist < currentDist)
                         {
                             return false;
                         }
