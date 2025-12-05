@@ -264,6 +264,11 @@ namespace NeuralBattalion.Terrain
             terrainObj.transform.position = worldPos;
             terrainObj.transform.parent = obstacleTilemap?.transform;
             
+            // Add Rigidbody2D - needed for trigger collision detection with projectiles
+            Rigidbody2D rb = terrainObj.AddComponent<Rigidbody2D>();
+            rb.bodyType = RigidbodyType2D.Static; // Static since terrain doesn't move
+            rb.gravityScale = 0f;
+            
             // Add BoxCollider2D as trigger
             BoxCollider2D collider = terrainObj.AddComponent<BoxCollider2D>();
             collider.size = cellSize * 0.95f; // Slightly smaller to prevent overlaps
@@ -279,6 +284,8 @@ namespace NeuralBattalion.Terrain
             
             // Tag appropriately
             terrainObj.tag = "DestructibleTerrain";
+            
+            Debug.Log($"[TerrainManager] Created DestructibleTerrain at {worldPos} (grid: {gridPos}), type: {tileType}, health: {health}");
         }
 
         /// <summary>
