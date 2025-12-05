@@ -138,8 +138,15 @@ namespace NeuralBattalion.Player
                 weapon.Configure(tankData);
             }
 
-            // Recreate directional sprites with tank color
-            CreateDirectionalSprites();
+            // Only recreate sprites if they haven't been created or color changed
+            Color newColor = tankData?.TankColor ?? Color.green;
+            bool needsRecreate = directionalSprites == null || 
+                                (spriteRenderer != null && spriteRenderer.color != newColor);
+            
+            if (needsRecreate)
+            {
+                CreateDirectionalSprites();
+            }
         }
 
         /// <summary>
@@ -419,6 +426,19 @@ namespace NeuralBattalion.Player
             ApplyShield(3f);
 
             EventBus.Publish(new PlayerRespawnEvent { RemainingLives = playerHealth?.CurrentLives ?? 0 });
+        }
+
+        /// <summary>
+        /// Clean up resources when destroyed.
+        /// </summary>
+        private void OnDestroy()
+        {
+            // Clean up directional sprites to prevent memory leaks
+            if (directionalSprites != null)
+            {
+                TankSpriteManager.DestroyDirectionalSprites(directionalSprites);
+                directionalSprites = null;
+            }
         }
     }
 }

@@ -159,8 +159,15 @@ namespace NeuralBattalion.Enemy
             // Apply visual properties and create directional sprites
             if (spriteRenderer != null)
             {
-                // Create directional sprites instead of single sprite
-                CreateDirectionalSprites();
+                // Only recreate sprites if they haven't been created or color changed
+                Color newColor = tankData?.TankColor ?? Color.red;
+                bool needsRecreate = directionalSprites == null || 
+                                    (spriteRenderer != null && spriteRenderer.color != newColor);
+                
+                if (needsRecreate)
+                {
+                    CreateDirectionalSprites();
+                }
             }
 
             if (weapon != null)
@@ -459,6 +466,19 @@ namespace NeuralBattalion.Enemy
         public float GetHealthPercentage()
         {
             return (float)health / maxHealth;
+        }
+
+        /// <summary>
+        /// Clean up resources when destroyed.
+        /// </summary>
+        private void OnDestroy()
+        {
+            // Clean up directional sprites to prevent memory leaks
+            if (directionalSprites != null)
+            {
+                TankSpriteManager.DestroyDirectionalSprites(directionalSprites);
+                directionalSprites = null;
+            }
         }
     }
 }

@@ -109,6 +109,8 @@ namespace NeuralBattalion.Terrain
 
         /// <summary>
         /// Create a simple colored sprite for the border.
+        /// NOTE: The created texture is owned by the sprite and will be cleaned up
+        /// when the boundary GameObject is destroyed.
         /// </summary>
         private Sprite CreateBorderSprite(int width, int height)
         {
@@ -130,6 +132,19 @@ namespace NeuralBattalion.Terrain
                 new Vector2(0.5f, 0.5f),
                 100f // pixels per unit
             );
+        }
+
+        /// <summary>
+        /// Clean up boundary resources when destroyed.
+        /// </summary>
+        private void OnDestroy()
+        {
+            // Clean up boundary container and all child sprites
+            if (boundaryContainer != null)
+            {
+                // Unity will automatically clean up child GameObjects and their components
+                Destroy(boundaryContainer);
+            }
         }
 
         /// <summary>

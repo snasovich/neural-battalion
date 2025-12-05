@@ -65,6 +65,8 @@ namespace NeuralBattalion.Utility
 
         /// <summary>
         /// Create a tank sprite facing a specific direction.
+        /// NOTE: The created texture is owned by the sprite and will be cleaned up by Unity
+        /// when the sprite is destroyed or the scene is unloaded.
         /// </summary>
         private static Sprite CreateTankSprite(Color color, Direction direction, int size)
         {
@@ -112,6 +114,35 @@ namespace NeuralBattalion.Utility
                 new Vector2(0.5f, 0.5f),
                 size // pixels per unit
             );
+        }
+
+        /// <summary>
+        /// Destroy directional sprites and their associated textures.
+        /// Call this when sprites are no longer needed to free memory.
+        /// </summary>
+        public static void DestroyDirectionalSprites(DirectionalSprites sprites)
+        {
+            if (sprites == null) return;
+
+            DestroySprite(sprites.Up);
+            DestroySprite(sprites.Right);
+            DestroySprite(sprites.Down);
+            DestroySprite(sprites.Left);
+        }
+
+        /// <summary>
+        /// Helper to destroy a sprite and its texture.
+        /// </summary>
+        private static void DestroySprite(Sprite sprite)
+        {
+            if (sprite == null) return;
+            
+            Texture2D texture = sprite.texture;
+            Object.Destroy(sprite);
+            if (texture != null)
+            {
+                Object.Destroy(texture);
+            }
         }
 
         /// <summary>
