@@ -34,10 +34,12 @@ namespace NeuralBattalion.Enemy
 
         [Header("Collision Settings")]
         [SerializeField] private float collisionCheckRadius = 0.45f;
+        
+        private const int OVERLAP_BUFFER_SIZE = 10;
 
         private Rigidbody2D rb;
         private TerrainManager terrainManager;
-        private Collider2D[] overlapBuffer = new Collider2D[10];
+        private Collider2D[] overlapBuffer = new Collider2D[OVERLAP_BUFFER_SIZE];
         
         // Cache for tank component checks
         // Note: This cache grows as new tanks are encountered. In typical gameplay with limited tanks,
@@ -250,7 +252,7 @@ namespace NeuralBattalion.Enemy
             for (int i = 0; i < numOverlaps; i++)
             {
                 Collider2D overlap = overlapBuffer[i];
-                if (overlap != null && overlap.gameObject != gameObject)
+                if (overlap.gameObject != gameObject)
                 {
                     if (IsTank(overlap.gameObject))
                     {
