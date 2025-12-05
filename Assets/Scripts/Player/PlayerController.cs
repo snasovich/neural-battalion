@@ -33,10 +33,11 @@ namespace NeuralBattalion.Player
         [SerializeField] private float rotationSpeed = 180f;
 
         [Header("Collision Settings")]
-        [SerializeField] private float collisionCheckRadius = 0.5f;
+        [SerializeField] private float collisionCheckRadius = 0.45f;
 
         private Rigidbody2D rb;
         private TerrainManager terrainManager;
+        private Collider2D[] overlapBuffer = new Collider2D[10];
         
         // Cache for tank component checks
         // Note: This cache grows as new tanks are encountered. In typical gameplay with limited tanks,
@@ -175,13 +176,26 @@ namespace NeuralBattalion.Player
                 }
             }
 
-            // First check if target position would overlap with any tank
-            Collider2D overlapCheck = Physics2D.OverlapCircle(targetPosition, collisionCheckRadius);
-            if (overlapCheck != null && overlapCheck.gameObject != gameObject)
+            // Check if target position would overlap with any tank
+            int numOverlaps = Physics2D.OverlapCircleNonAlloc(targetPosition, collisionCheckRadius, overlapBuffer);
+            for (int i = 0; i < numOverlaps; i++)
             {
-                if (IsTank(overlapCheck.gameObject))
+                Collider2D overlap = overlapBuffer[i];
+                if (overlap != null && overlap.gameObject != gameObject)
                 {
-                    return false;
+                    if (IsTank(overlap.gameObject))
+                    {
+                        // Found a tank at target position - check if we're moving away or toward it
+                        Vector2 toOtherTank = (Vector2)overlap.transform.position - rb.position;
+                        Vector2 moveDirection = targetPosition - rb.position;
+                        
+                        // If moving toward the other tank (dot product > 0), block movement
+                        // If moving away (dot product < 0), allow it to separate
+                        if (Vector2.Dot(moveDirection.normalized, toOtherTank.normalized) > 0)
+                        {
+                            return false;
+                        }
+                    }
                 }
             }
 
