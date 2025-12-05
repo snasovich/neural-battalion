@@ -30,6 +30,10 @@ namespace NeuralBattalion.Enemy
         [Header("Debug")]
         [SerializeField] private bool debugMode = false;
 
+        // Spawn position validation constants
+        private const float TANK_SIZE_RADIUS = 0.8f;
+        private const float BOUNDARY_SAFETY_OFFSET = 0.5f;
+
         // Current wave state
         private int currentWaveIndex = 0;
         private int enemiesSpawnedThisWave = 0;
@@ -40,6 +44,9 @@ namespace NeuralBattalion.Enemy
         // Enemy tracking
         private List<EnemyController> activeEnemies = new List<EnemyController>();
         private int nextEnemyId = 0;
+        
+        // Cached references
+        private Terrain.LevelBoundary levelBoundary;
 
         public int CurrentWave => currentWaveIndex + 1;
         public int TotalWaves => waves?.Length ?? 0;
@@ -49,6 +56,13 @@ namespace NeuralBattalion.Enemy
         private void Start()
         {
             SubscribeToEvents();
+            
+            // Cache level boundary reference
+            levelBoundary = FindObjectOfType<Terrain.LevelBoundary>();
+            if (levelBoundary == null && debugMode)
+            {
+                Debug.LogWarning("[EnemySpawner] LevelBoundary not found - spawn position validation will be skipped");
+            }
         }
 
         private void OnDestroy()
@@ -406,9 +420,8 @@ namespace NeuralBattalion.Enemy
         /// <returns>Valid spawn position within boundaries.</returns>
         private Vector3 ValidateSpawnPosition(Vector3 position)
         {
-            // Find level boundary
-            Terrain.LevelBoundary boundary = FindObjectOfType<Terrain.LevelBoundary>();
-            if (boundary == null)
+            // Check if boundary is available
+            if (levelBoundary == null)
             {
                 // No boundary found, return original position
                 return position;
@@ -416,15 +429,15 @@ namespace NeuralBattalion.Enemy
 
             // Check if position is within bounds
             Vector2 pos2D = new Vector2(position.x, position.y);
-            if (!boundary.IsTankWithinBounds(pos2D, 0.8f))
+            if (!levelBoundary.IsTankWithinBounds(pos2D, TANK_SIZE_RADIUS))
             {
                 // Position is outside bounds, clamp it
-                Vector2 clampedPos = boundary.ClampToBounds(pos2D);
+                Vector2 clampedPos = levelBoundary.ClampToBounds(pos2D);
                 
                 // Add a small offset from the edge to ensure tank is fully inside
-                Vector2 center = boundary.LevelBounds.center;
+                Vector2 center = levelBoundary.LevelBounds.center;
                 Vector2 direction = (clampedPos - center).normalized;
-                clampedPos -= direction * 0.5f; // Move 0.5 units away from edge
+                clampedPos -= direction * BOUNDARY_SAFETY_OFFSET;
                 
                 if (debugMode)
                 {
