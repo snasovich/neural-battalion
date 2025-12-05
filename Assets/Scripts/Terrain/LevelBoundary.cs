@@ -109,8 +109,8 @@ namespace NeuralBattalion.Terrain
 
         /// <summary>
         /// Create a simple colored sprite for the border.
-        /// NOTE: The created texture is owned by the sprite and will be cleaned up
-        /// when the boundary GameObject is destroyed.
+        /// NOTE: The textures created for border sprites are cleaned up when
+        /// the boundary container GameObject is destroyed in OnDestroy.
         /// </summary>
         private Sprite CreateBorderSprite(int width, int height)
         {

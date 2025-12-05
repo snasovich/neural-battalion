@@ -65,8 +65,8 @@ namespace NeuralBattalion.Utility
 
         /// <summary>
         /// Create a tank sprite facing a specific direction.
-        /// NOTE: The created texture is owned by the sprite and will be cleaned up by Unity
-        /// when the sprite is destroyed or the scene is unloaded.
+        /// NOTE: The created texture should be explicitly destroyed when no longer needed
+        /// using DestroyDirectionalSprites() to prevent memory leaks.
         /// </summary>
         private static Sprite CreateTankSprite(Color color, Direction direction, int size)
         {

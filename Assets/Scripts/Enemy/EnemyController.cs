@@ -145,6 +145,9 @@ namespace NeuralBattalion.Enemy
             EventBus.Publish(new EnemySpawnedEvent { EnemyId = enemyId, EnemyType = enemyType });
         }
 
+        // Track the color used to create sprites
+        private Color currentSpriteColor = Color.clear;
+
         /// <summary>
         /// Apply tank data configuration.
         /// </summary>
@@ -161,8 +164,7 @@ namespace NeuralBattalion.Enemy
             {
                 // Only recreate sprites if they haven't been created or color changed
                 Color newColor = tankData?.TankColor ?? Color.red;
-                bool needsRecreate = directionalSprites == null || 
-                                    (spriteRenderer != null && spriteRenderer.color != newColor);
+                bool needsRecreate = directionalSprites == null || currentSpriteColor != newColor;
                 
                 if (needsRecreate)
                 {
@@ -183,7 +185,14 @@ namespace NeuralBattalion.Enemy
         {
             if (spriteRenderer == null) return;
 
+            // Clean up old sprites before creating new ones
+            if (directionalSprites != null)
+            {
+                TankSpriteManager.DestroyDirectionalSprites(directionalSprites);
+            }
+
             Color tankColor = tankData?.TankColor ?? Color.red;
+            currentSpriteColor = tankColor;
             directionalSprites = TankSpriteManager.CreateDirectionalSprites(tankColor, 32);
 
             // Set initial sprite
