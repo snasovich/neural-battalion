@@ -30,6 +30,10 @@ namespace NeuralBattalion.Enemy
         [Header("Debug")]
         [SerializeField] private bool debugMode = false;
 
+        // Spawn position validation constants
+        private const float TANK_SIZE_RADIUS = 0.8f;
+        private const float BOUNDARY_SAFETY_OFFSET = 0.5f;
+
         // Current wave state
         private int currentWaveIndex = 0;
         private int enemiesSpawnedThisWave = 0;
@@ -40,6 +44,9 @@ namespace NeuralBattalion.Enemy
         // Enemy tracking
         private List<EnemyController> activeEnemies = new List<EnemyController>();
         private int nextEnemyId = 0;
+        
+        // Cached references
+        private Terrain.LevelBoundary levelBoundary;
 
         public int CurrentWave => currentWaveIndex + 1;
         public int TotalWaves => waves?.Length ?? 0;
@@ -49,6 +56,13 @@ namespace NeuralBattalion.Enemy
         private void Start()
         {
             SubscribeToEvents();
+            
+            // Cache level boundary reference
+            levelBoundary = FindObjectOfType<Terrain.LevelBoundary>();
+            if (levelBoundary == null && debugMode)
+            {
+                Debug.LogWarning("[EnemySpawner] LevelBoundary not found - spawn position validation will be skipped");
+            }
         }
 
         private void OnDestroy()
@@ -192,7 +206,10 @@ namespace NeuralBattalion.Enemy
                 return;
             }
             
-            GameObject enemyObj = Instantiate(prefab, spawnPoint.position, spawnPoint.rotation);
+            // Validate spawn position is within level boundaries
+            Vector3 spawnPosition = ValidateSpawnPosition(spawnPoint.position);
+            
+            GameObject enemyObj = Instantiate(prefab, spawnPosition, spawnPoint.rotation);
             enemyObj.name = $"Enemy_{nextEnemyId}_{EnemyTypes.GetName(enemyType)}";
 
             EnemyController enemy = enemyObj.GetComponent<EnemyController>();
@@ -204,7 +221,7 @@ namespace NeuralBattalion.Enemy
                 if (debugMode)
                 {
                     Debug.Log($"[EnemySpawner] Spawned enemy {enemy.EnemyId} ({EnemyTypes.GetName(enemyType)}) " +
-                             $"at {spawnPoint.position} - Wave progress: {enemiesSpawnedThisWave}/{enemiesToSpawnThisWave}");
+                             $"at {spawnPosition} - Wave progress: {enemiesSpawnedThisWave}/{enemiesToSpawnThisWave}");
                 }
             }
             else
@@ -394,6 +411,43 @@ namespace NeuralBattalion.Enemy
             {
                 Debug.Log($"[EnemySpawner] Configured {waveData?.Length ?? 0} waves");
             }
+        }
+
+        /// <summary>
+        /// Validate and adjust spawn position to be within level boundaries.
+        /// </summary>
+        /// <param name="position">Desired spawn position.</param>
+        /// <returns>Valid spawn position within boundaries.</returns>
+        private Vector3 ValidateSpawnPosition(Vector3 position)
+        {
+            // Check if boundary is available
+            if (levelBoundary == null)
+            {
+                // No boundary found, return original position
+                return position;
+            }
+
+            // Check if position is within bounds
+            Vector2 pos2D = new Vector2(position.x, position.y);
+            if (!levelBoundary.IsTankWithinBounds(pos2D, TANK_SIZE_RADIUS))
+            {
+                // Position is outside bounds, clamp it
+                Vector2 clampedPos = levelBoundary.ClampToBounds(pos2D);
+                
+                // Add a small offset from the edge to ensure tank is fully inside
+                Vector2 center = levelBoundary.LevelBounds.center;
+                Vector2 direction = (clampedPos - center).normalized;
+                clampedPos -= direction * BOUNDARY_SAFETY_OFFSET;
+                
+                if (debugMode)
+                {
+                    Debug.LogWarning($"[EnemySpawner] Spawn position {position} was outside bounds, clamped to {clampedPos}");
+                }
+                
+                return new Vector3(clampedPos.x, clampedPos.y, position.z);
+            }
+
+            return position;
         }
     }
 }

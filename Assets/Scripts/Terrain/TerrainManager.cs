@@ -37,10 +37,15 @@ namespace NeuralBattalion.Terrain
         [Header("Destructible Terrain")]
         [SerializeField] private GameObject destructibleTerrainPrefab;
 
+        [Header("Level Boundary")]
+        [SerializeField] private bool createBoundary = true;
+        [SerializeField] private Color boundaryColor = new Color(0.3f, 0.3f, 0.3f, 1f);
+
         // Internal grid data
         private TileType[,] tileGrid;
         private int[,] tileHealth; // For destructible tiles
         private GameObject[,] destructibleObjects; // Track destructible terrain GameObjects
+        private LevelBoundary levelBoundary;
 
         // Pre-allocated buffer for tank collision checks
         private Vector2[] cornerBuffer = new Vector2[4];
@@ -184,6 +189,12 @@ namespace NeuralBattalion.Terrain
                         tilesSet++;
                     }
                 }
+            }
+            
+            // Create level boundary
+            if (createBoundary)
+            {
+                CreateLevelBoundary(levelData.GridWidth, levelData.GridHeight);
             }
             
             Debug.Log($"[TerrainManager] Level built successfully - {tilesSet} tiles placed");
@@ -538,6 +549,34 @@ namespace NeuralBattalion.Terrain
                     SetTile(pos, TileType.Brick);
                 }
             }
+        }
+
+        /// <summary>
+        /// Create or update the level boundary.
+        /// </summary>
+        /// <param name="width">Grid width.</param>
+        /// <param name="height">Grid height.</param>
+        private void CreateLevelBoundary(int width, int height)
+        {
+            // Find existing boundary or create new one
+            if (levelBoundary == null)
+            {
+                levelBoundary = FindObjectOfType<LevelBoundary>();
+            }
+
+            if (levelBoundary == null)
+            {
+                // Create new boundary game object
+                GameObject boundaryObj = new GameObject("LevelBoundary");
+                boundaryObj.transform.parent = transform;
+                boundaryObj.transform.localPosition = Vector3.zero;
+                levelBoundary = boundaryObj.AddComponent<LevelBoundary>();
+            }
+
+            // Initialize boundary with level dimensions
+            levelBoundary.Initialize(width, height, cellSize.x);
+            
+            Debug.Log($"[TerrainManager] Level boundary created for {width}x{height} grid");
         }
 
         /// <summary>
