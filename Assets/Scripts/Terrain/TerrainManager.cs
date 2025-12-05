@@ -55,6 +55,46 @@ namespace NeuralBattalion.Terrain
             Debug.Log("[TerrainManager] Awake - Complete");
         }
 
+        private void OnEnable()
+        {
+            // Subscribe to terrain destruction events
+            EventBus.Subscribe<TerrainDestroyedEvent>(OnTerrainDestroyed);
+            Debug.Log("[TerrainManager] Subscribed to TerrainDestroyedEvent");
+        }
+
+        private void OnDisable()
+        {
+            // Unsubscribe from events
+            EventBus.Unsubscribe<TerrainDestroyedEvent>(OnTerrainDestroyed);
+            Debug.Log("[TerrainManager] Unsubscribed from TerrainDestroyedEvent");
+        }
+
+        /// <summary>
+        /// Handle terrain destroyed event - removes tile from tilemap.
+        /// </summary>
+        private void OnTerrainDestroyed(TerrainDestroyedEvent evt)
+        {
+            Debug.Log($"[TerrainManager] OnTerrainDestroyed event received for position {evt.GridPosition}");
+            
+            // Remove the tile from the tilemap
+            Vector3Int tilemapPos = new Vector3Int(evt.GridPosition.x, evt.GridPosition.y, 0);
+            
+            if (obstacleTilemap != null)
+            {
+                obstacleTilemap.SetTile(tilemapPos, null);
+                Debug.Log($"[TerrainManager] Removed tile from tilemap at {tilemapPos}");
+            }
+            
+            // Update internal grid
+            if (IsValidGridPosition(evt.GridPosition))
+            {
+                tileGrid[evt.GridPosition.x, evt.GridPosition.y] = TileType.Empty;
+                tileHealth[evt.GridPosition.x, evt.GridPosition.y] = 0;
+                destructibleObjects[evt.GridPosition.x, evt.GridPosition.y] = null;
+                Debug.Log($"[TerrainManager] Updated internal grid at {evt.GridPosition}");
+            }
+        }
+
         /// <summary>
         /// Initialize the internal grid data.
         /// </summary>

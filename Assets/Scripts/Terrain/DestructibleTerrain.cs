@@ -161,6 +161,7 @@ namespace NeuralBattalion.Terrain
                 Mathf.FloorToInt(transform.position.y)
             );
 
+            Debug.Log($"[DestructibleTerrain] Publishing TerrainDestroyedEvent for grid position {gridPos} (world pos: {transform.position})");
             EventBus.Publish(new TerrainDestroyedEvent
             {
                 GridPosition = gridPos,
