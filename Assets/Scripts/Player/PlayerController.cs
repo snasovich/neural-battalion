@@ -55,6 +55,7 @@ namespace NeuralBattalion.Player
         private static System.Collections.Generic.Dictionary<GameObject, bool> tankCache = 
             new System.Collections.Generic.Dictionary<GameObject, bool>();
         private Vector2 moveDirection;
+        private Vector2 lastFacingDirection = Vector2.up; // Track facing direction independently
         private bool canShoot = true;
         private float lastShotTime;
         private bool isInvulnerable;
@@ -201,32 +202,37 @@ namespace NeuralBattalion.Player
         /// </summary>
         private void Move()
         {
-            if (moveDirection == Vector2.zero) return;
-
-            // Tank moves in 4 directions only (classic Battle City style)
-            Vector2 snappedDirection = SnapToCardinalDirection(moveDirection);
-
-            // Update sprite direction based on movement
-            TankSpriteManager.Direction newDirection = TankSpriteManager.GetDirectionFromVector(snappedDirection);
-            if (newDirection != currentDirection)
+            // Always update facing direction if there's input, even if not moving
+            if (moveDirection != Vector2.zero)
             {
-                UpdateSpriteDirection(newDirection);
-            }
+                // Tank moves in 4 directions only (classic Battle City style)
+                Vector2 snappedDirection = SnapToCardinalDirection(moveDirection);
+                
+                // Update facing direction
+                lastFacingDirection = snappedDirection;
 
-            // Rotate to face movement direction (for transform.up to be used in shooting)
-            float targetAngle = Mathf.Atan2(snappedDirection.y, snappedDirection.x) * Mathf.Rad2Deg - 90f;
-            float currentAngle = rb.rotation;
-            float newAngle = Mathf.MoveTowardsAngle(currentAngle, targetAngle, rotationSpeed * Time.fixedDeltaTime);
-            rb.MoveRotation(newAngle);
+                // Update sprite direction based on facing
+                TankSpriteManager.Direction newDirection = TankSpriteManager.GetDirectionFromVector(snappedDirection);
+                if (newDirection != currentDirection)
+                {
+                    UpdateSpriteDirection(newDirection);
+                }
 
-            // Calculate intended movement
-            Vector2 movement = snappedDirection * moveSpeed * speedModifier * Time.fixedDeltaTime;
-            Vector2 targetPosition = rb.position + movement;
+                // Rotate to face movement direction (for transform.up to be used in shooting)
+                float targetAngle = Mathf.Atan2(snappedDirection.y, snappedDirection.x) * Mathf.Rad2Deg - 90f;
+                float currentAngle = rb.rotation;
+                float newAngle = Mathf.MoveTowardsAngle(currentAngle, targetAngle, rotationSpeed * Time.fixedDeltaTime);
+                rb.MoveRotation(newAngle);
 
-            // Check if movement is valid (no terrain, tank collision, or boundary)
-            if (CanMoveTo(targetPosition))
-            {
-                rb.MovePosition(targetPosition);
+                // Calculate intended movement
+                Vector2 movement = snappedDirection * moveSpeed * speedModifier * Time.fixedDeltaTime;
+                Vector2 targetPosition = rb.position + movement;
+
+                // Check if movement is valid (no terrain, tank collision, or boundary)
+                if (CanMoveTo(targetPosition))
+                {
+                    rb.MovePosition(targetPosition);
+                }
             }
         }
 
