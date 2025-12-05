@@ -38,6 +38,9 @@ namespace NeuralBattalion.Terrain
         private TileType[,] tileGrid;
         private int[,] tileHealth; // For destructible tiles
 
+        // Pre-allocated buffer for tank collision checks
+        private Vector2[] cornerBuffer = new Vector2[4];
+
         public int GridWidth => gridWidth;
         public int GridHeight => gridHeight;
 
@@ -336,6 +339,35 @@ namespace NeuralBattalion.Terrain
         {
             TileType tileType = GetTileAtWorldPosition(worldPos);
             return IsTilePassable(tileType);
+        }
+
+        /// <summary>
+        /// Check if a tank-sized area at a world position is passable.
+        /// Checks multiple points around the tank's bounds.
+        /// </summary>
+        /// <param name="worldPos">Center position of the tank.</param>
+        /// <param name="tankSize">Size of the tank (width and height).</param>
+        /// <returns>True if all checked positions are passable.</returns>
+        public bool IsTankPositionPassable(Vector2 worldPos, float tankSize = 0.8f)
+        {
+            // Check center
+            if (!IsPositionPassable(worldPos))
+                return false;
+
+            // Check corners using pre-allocated buffer
+            float halfSize = tankSize * 0.5f;
+            cornerBuffer[0] = worldPos + new Vector2(halfSize, halfSize);
+            cornerBuffer[1] = worldPos + new Vector2(halfSize, -halfSize);
+            cornerBuffer[2] = worldPos + new Vector2(-halfSize, halfSize);
+            cornerBuffer[3] = worldPos + new Vector2(-halfSize, -halfSize);
+
+            for (int i = 0; i < 4; i++)
+            {
+                if (!IsPositionPassable(cornerBuffer[i]))
+                    return false;
+            }
+
+            return true;
         }
 
         /// <summary>

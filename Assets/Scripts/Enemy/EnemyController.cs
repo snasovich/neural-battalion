@@ -2,6 +2,9 @@ using UnityEngine;
 using NeuralBattalion.Combat;
 using NeuralBattalion.Data;
 using NeuralBattalion.Core.Events;
+using NeuralBattalion.Terrain;
+using NeuralBattalion.Utility;
+using NeuralBattalion.Player;
 
 namespace NeuralBattalion.Enemy
 {
@@ -29,7 +32,23 @@ namespace NeuralBattalion.Enemy
         [SerializeField] private int enemyType;
         [SerializeField] private int scoreValue = 100;
 
+        [Header("Collision Settings")]
+        [SerializeField] private float collisionCheckRadius = 0.45f;
+        
+        // Buffer size for overlap detection - 10 is sufficient for typical scenarios where
+        // a tank would rarely have more than 2-3 other tanks within collision radius
+        private const int OVERLAP_BUFFER_SIZE = 10;
+
         private Rigidbody2D rb;
+        private TerrainManager terrainManager;
+        private Collider2D[] overlapBuffer = new Collider2D[OVERLAP_BUFFER_SIZE];
+        
+        // Cache for tank component checks
+        // Note: This cache grows as new tanks are encountered. In typical gameplay with limited tanks,
+        // this is not an issue. For games with many dynamically spawned/destroyed tanks, consider
+        // implementing cache cleanup or using a different collision identification strategy.
+        private static System.Collections.Generic.Dictionary<GameObject, bool> tankCache = 
+            new System.Collections.Generic.Dictionary<GameObject, bool>();
         private Vector2 moveDirection;
         private float moveSpeed = 3f;
         private float rotationSpeed = 180f;
@@ -51,6 +70,7 @@ namespace NeuralBattalion.Enemy
             rb = GetComponent<Rigidbody2D>();
             rb.gravityScale = 0f;
             rb.freezeRotation = true;
+            rb.bodyType = RigidbodyType2D.Kinematic; // Prevent physics-based pushing
 
             // Find sprite renderer if not assigned
             if (spriteRenderer == null)
@@ -69,6 +89,13 @@ namespace NeuralBattalion.Enemy
             if (enemyAI == null)
             {
                 enemyAI = GetComponent<EnemyAI>();
+            }
+
+            // Find TerrainManager
+            terrainManager = FindObjectOfType<TerrainManager>();
+            if (terrainManager == null)
+            {
+                Debug.LogWarning("[EnemyController] TerrainManager not found - collision detection will be disabled");
             }
         }
 
@@ -195,9 +222,76 @@ namespace NeuralBattalion.Enemy
             float newAngle = Mathf.MoveTowardsAngle(currentAngle, targetAngle, rotationSpeed * Time.fixedDeltaTime);
             rb.MoveRotation(newAngle);
 
-            // Move forward
+            // Calculate intended movement
             Vector2 movement = snappedDirection * moveSpeed * Time.fixedDeltaTime;
-            rb.MovePosition(rb.position + movement);
+            Vector2 targetPosition = rb.position + movement;
+
+            // Check if movement is valid (no terrain or tank collision)
+            if (CanMoveTo(targetPosition))
+            {
+                rb.MovePosition(targetPosition);
+            }
+        }
+
+        /// <summary>
+        /// Check if the tank can move to a target position without colliding.
+        /// </summary>
+        /// <param name="targetPosition">The target position to check.</param>
+        /// <returns>True if the position is valid.</returns>
+        private bool CanMoveTo(Vector2 targetPosition)
+        {
+            // Check terrain collision for tank-sized area
+            if (terrainManager != null)
+            {
+                if (!terrainManager.IsTankPositionPassable(targetPosition))
+                {
+                    return false;
+                }
+            }
+
+            // Check if target position would overlap with any tank
+            int numOverlaps = Physics2D.OverlapCircleNonAlloc(targetPosition, collisionCheckRadius, overlapBuffer);
+            for (int i = 0; i < numOverlaps; i++)
+            {
+                Collider2D overlap = overlapBuffer[i];
+                if (overlap.gameObject != gameObject)
+                {
+                    if (IsTank(overlap.gameObject))
+                    {
+                        // Found a tank at target position - check if moving would decrease distance
+                        Vector2 otherPos = overlap.transform.position;
+                        float currentDist = Vector2.Distance(rb.position, otherPos);
+                        float targetDist = Vector2.Distance(targetPosition, otherPos);
+                        
+                        // Only block if target position would be closer to the other tank
+                        // This allows separation while preventing overlap
+                        if (targetDist < currentDist)
+                        {
+                            return false;
+                        }
+                    }
+                }
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Check if a GameObject is a tank (with caching for performance).
+        /// </summary>
+        private static bool IsTank(GameObject obj)
+        {
+            // Check cache first
+            if (tankCache.TryGetValue(obj, out bool isTank))
+                return isTank;
+
+            // Not in cache, check components
+            bool result = obj.GetComponent<PlayerController>() != null || 
+                          obj.GetComponent<EnemyController>() != null;
+            
+            // Cache the result
+            tankCache[obj] = result;
+            return result;
         }
 
         /// <summary>
