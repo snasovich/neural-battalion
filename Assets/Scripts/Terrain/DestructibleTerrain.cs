@@ -64,35 +64,25 @@ namespace NeuralBattalion.Terrain
         /// <returns>True if terrain was destroyed.</returns>
         public bool TakeDamage(int damage = 1, bool canDestroySteel = false)
         {
-            Debug.Log($"[DestructibleTerrain] TakeDamage called on {gameObject.name}. Type: {tileType}, Health: {currentHealth}/{maxHealth}, Damage: {damage}, CanDestroySteel: {canDestroySteel}");
-            
-            if (isDestroyed)
-            {
-                Debug.Log($"[DestructibleTerrain] {gameObject.name} already destroyed, ignoring damage");
-                return false;
-            }
+            if (isDestroyed) return false;
 
             // Steel can only be destroyed if the projectile has power-up
             if (tileType == TileType.Steel && !canDestroySteel)
             {
-                Debug.Log($"[DestructibleTerrain] Steel tile hit without power-up, resisting damage");
                 // Play hit sound but don't take damage
                 PlayHitEffect();
                 return false;
             }
 
             currentHealth -= damage;
-            Debug.Log($"[DestructibleTerrain] Health reduced to {currentHealth}/{maxHealth}");
 
             if (currentHealth <= 0)
             {
-                Debug.Log($"[DestructibleTerrain] Destroying {gameObject.name}");
                 Destroy();
                 return true;
             }
             else
             {
-                Debug.Log($"[DestructibleTerrain] Tile damaged but not destroyed");
                 UpdateDamageVisual();
                 PlayHitEffect();
                 return false;
@@ -135,13 +125,8 @@ namespace NeuralBattalion.Terrain
         /// </summary>
         private void Destroy()
         {
-            if (isDestroyed)
-            {
-                Debug.Log($"[DestructibleTerrain] {gameObject.name} already destroyed");
-                return;
-            }
+            if (isDestroyed) return;
 
-            Debug.Log($"[DestructibleTerrain] Destroying terrain {gameObject.name} at {transform.position}");
             isDestroyed = true;
 
             // Play destruction effects
@@ -161,7 +146,6 @@ namespace NeuralBattalion.Terrain
                 Mathf.FloorToInt(transform.position.y)
             );
 
-            Debug.Log($"[DestructibleTerrain] Publishing TerrainDestroyedEvent for grid position {gridPos} (world pos: {transform.position})");
             EventBus.Publish(new TerrainDestroyedEvent
             {
                 GridPosition = gridPos,
@@ -169,9 +153,7 @@ namespace NeuralBattalion.Terrain
             });
 
             // Disable or destroy game object
-            Debug.Log($"[DestructibleTerrain] Disabling GameObject {gameObject.name}");
             gameObject.SetActive(false);
-            // Or: Destroy(gameObject);
         }
 
         /// <summary>

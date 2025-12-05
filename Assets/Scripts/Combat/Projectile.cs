@@ -80,8 +80,6 @@ namespace NeuralBattalion.Combat
         public void Fire(Vector2 startPosition, Vector2 fireDirection, bool fromPlayer,
                         float projectileSpeed = -1, int projectileDamage = -1)
         {
-            Debug.Log($"[Projectile] Fire() called at {startPosition}, direction: {fireDirection}, fromPlayer: {fromPlayer}");
-            
             transform.position = startPosition;
             direction = fireDirection.normalized;
             isPlayerProjectile = fromPlayer;
@@ -91,8 +89,6 @@ namespace NeuralBattalion.Combat
             if (projectileSpeed > 0) speed = projectileSpeed;
             if (projectileDamage > 0) damage = projectileDamage;
 
-            Debug.Log($"[Projectile] Configured with speed: {speed}, damage: {damage}, direction: {direction}");
-
             // Rotate sprite to face direction
             float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg - 90f;
             transform.rotation = Quaternion.Euler(0, 0, angle);
@@ -101,30 +97,15 @@ namespace NeuralBattalion.Combat
             gameObject.tag = fromPlayer ? "PlayerProjectile" : "EnemyProjectile";
 
             gameObject.SetActive(true);
-            Debug.Log($"[Projectile] Projectile {gameObject.name} activated and ready to move");
         }
 
         private void OnTriggerEnter2D(Collider2D other)
         {
-            if (hasHit)
-            {
-                Debug.Log($"[Projectile] Already hit, ignoring collision with {other.gameObject.name}");
-                return;
-            }
-
-            Debug.Log($"[Projectile] OnTriggerEnter2D with {other.gameObject.name}, tag: {other.tag}");
+            if (hasHit) return;
 
             // Ignore collision with shooter
-            if (isPlayerProjectile && other.CompareTag("Player"))
-            {
-                Debug.Log("[Projectile] Ignoring collision with player (own projectile)");
-                return;
-            }
-            if (!isPlayerProjectile && other.CompareTag("Enemy"))
-            {
-                Debug.Log("[Projectile] Ignoring collision with enemy (own projectile)");
-                return;
-            }
+            if (isPlayerProjectile && other.CompareTag("Player")) return;
+            if (!isPlayerProjectile && other.CompareTag("Enemy")) return;
 
             // Check what we hit
             HandleCollision(other);
@@ -135,15 +116,12 @@ namespace NeuralBattalion.Combat
         /// </summary>
         private void HandleCollision(Collider2D other)
         {
-            Debug.Log($"[Projectile] HandleCollision with {other.gameObject.name}");
             hasHit = true;
-
             Vector2 hitPosition = transform.position;
 
             // Hit player
             if (other.CompareTag("Player") && !isPlayerProjectile)
             {
-                Debug.Log("[Projectile] Hit player tank");
                 var playerController = other.GetComponent<Player.PlayerController>();
                 playerController?.TakeDamage(damage);
                 OnHit(hitPosition, false, true);
@@ -153,7 +131,6 @@ namespace NeuralBattalion.Combat
             // Hit enemy
             if (other.CompareTag("Enemy") && isPlayerProjectile)
             {
-                Debug.Log("[Projectile] Hit enemy tank");
                 var enemyController = other.GetComponent<Enemy.EnemyController>();
                 enemyController?.TakeDamage(damage);
                 OnHit(hitPosition, false, true);
@@ -164,9 +141,7 @@ namespace NeuralBattalion.Combat
             var destructible = other.GetComponent<Terrain.DestructibleTerrain>();
             if (destructible != null)
             {
-                Debug.Log($"[Projectile] Hit destructible terrain: {other.gameObject.name}");
-                bool destroyed = destructible.TakeDamage(damage, canDestroySteel);
-                Debug.Log($"[Projectile] Terrain destroyed: {destroyed}");
+                destructible.TakeDamage(damage, canDestroySteel);
                 OnHit(hitPosition, true, false);
                 return;
             }
@@ -175,7 +150,6 @@ namespace NeuralBattalion.Combat
             var baseController = other.GetComponent<Terrain.BaseController>();
             if (baseController != null)
             {
-                Debug.Log("[Projectile] Hit base");
                 baseController.TakeDamage(damage);
                 OnHit(hitPosition, true, false);
                 return;
@@ -184,7 +158,6 @@ namespace NeuralBattalion.Combat
             // Hit other projectile (projectiles can destroy each other)
             if (other.CompareTag("PlayerProjectile") || other.CompareTag("EnemyProjectile"))
             {
-                Debug.Log("[Projectile] Hit another projectile");
                 var otherProjectile = other.GetComponent<Projectile>();
                 if (otherProjectile != null && otherProjectile.isPlayerProjectile != isPlayerProjectile)
                 {
@@ -197,13 +170,11 @@ namespace NeuralBattalion.Combat
             // Hit wall or other obstacle
             if (other.CompareTag("Wall") || other.CompareTag("Obstacle"))
             {
-                Debug.Log($"[Projectile] Hit wall/obstacle: {other.gameObject.name}");
                 OnHit(hitPosition, true, false);
                 return;
             }
 
             // Default: hit something, despawn
-            Debug.Log($"[Projectile] Hit unknown object: {other.gameObject.name}, tag: {other.tag}");
             OnHit(hitPosition, true, false);
         }
 
@@ -215,8 +186,6 @@ namespace NeuralBattalion.Combat
         /// <param name="hitTank">Whether hit a tank.</param>
         private void OnHit(Vector2 position, bool hitTerrain, bool hitTank)
         {
-            Debug.Log($"[Projectile] OnHit at {position}, hitTerrain: {hitTerrain}, hitTank: {hitTank}");
-            
             // Spawn hit effect
             if (hitEffectPrefab != null)
             {
@@ -237,7 +206,6 @@ namespace NeuralBattalion.Combat
                 HitTank = hitTank
             });
 
-            Debug.Log("[Projectile] Calling Despawn()");
             Despawn();
         }
 
@@ -247,13 +215,7 @@ namespace NeuralBattalion.Combat
         public void Despawn()
         {
             // Check if already inactive/despawned to prevent double-despawn
-            if (!gameObject.activeInHierarchy)
-            {
-                Debug.Log("[Projectile] Already despawned, skipping");
-                return;
-            }
-
-            Debug.Log($"[Projectile] Despawning projectile {gameObject.name}");
+            if (!gameObject.activeInHierarchy) return;
             
             hasHit = true;
             gameObject.SetActive(false);
@@ -261,25 +223,18 @@ namespace NeuralBattalion.Combat
             // Notify owner weapon
             if (ownerWeapon != null)
             {
-                Debug.Log($"[Projectile] Notifying weapon about projectile destruction");
                 ownerWeapon.OnProjectileDestroyed();
                 ownerWeapon = null;
-            }
-            else
-            {
-                Debug.LogWarning("[Projectile] No owner weapon to notify");
             }
 
             // Try to return to pool first, otherwise destroy
             var pool = ObjectPool.Instance;
             if (pool != null)
             {
-                Debug.Log("[Projectile] Returning to object pool");
                 pool.Return(gameObject);
             }
             else
             {
-                Debug.Log("[Projectile] Destroying projectile (no pool available)");
                 Destroy(gameObject);
             }
         }

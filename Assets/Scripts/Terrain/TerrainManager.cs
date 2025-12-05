@@ -74,15 +74,12 @@ namespace NeuralBattalion.Terrain
         /// </summary>
         private void OnTerrainDestroyed(TerrainDestroyedEvent evt)
         {
-            Debug.Log($"[TerrainManager] OnTerrainDestroyed event received for position {evt.GridPosition}");
-            
             // Remove the tile from the tilemap
             Vector3Int tilemapPos = new Vector3Int(evt.GridPosition.x, evt.GridPosition.y, 0);
             
             if (obstacleTilemap != null)
             {
                 obstacleTilemap.SetTile(tilemapPos, null);
-                Debug.Log($"[TerrainManager] Removed tile from tilemap at {tilemapPos}");
             }
             
             // Update internal grid
@@ -91,7 +88,6 @@ namespace NeuralBattalion.Terrain
                 tileGrid[evt.GridPosition.x, evt.GridPosition.y] = TileType.Empty;
                 tileHealth[evt.GridPosition.x, evt.GridPosition.y] = 0;
                 destructibleObjects[evt.GridPosition.x, evt.GridPosition.y] = null;
-                Debug.Log($"[TerrainManager] Updated internal grid at {evt.GridPosition}");
             }
         }
 
@@ -280,8 +276,6 @@ namespace NeuralBattalion.Terrain
             
             // Tag appropriately
             terrainObj.tag = "DestructibleTerrain";
-            
-            Debug.Log($"[TerrainManager] Created DestructibleTerrain at {worldPos} (grid: {gridPos}), type: {tileType}, health: {health}");
         }
 
         /// <summary>

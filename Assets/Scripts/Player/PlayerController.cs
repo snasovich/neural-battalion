@@ -72,13 +72,9 @@ namespace NeuralBattalion.Player
             moveDirection = playerInput.GetMoveDirection();
 
             // Handle shooting
-            if (playerInput.IsFirePressed())
+            if (playerInput.IsFirePressed() && CanShoot())
             {
-                Debug.Log($"[PlayerController] Fire button pressed. CanShoot: {CanShoot()}, weapon: {weapon != null}");
-                if (CanShoot())
-                {
-                    Fire();
-                }
+                Fire();
             }
         }
 
@@ -168,7 +164,6 @@ namespace NeuralBattalion.Player
         /// </summary>
         private void Fire()
         {
-            Debug.Log($"[PlayerController] Fire() called at {transform.position}, direction {transform.up}");
             lastShotTime = Time.time;
             
             if (weapon == null)
@@ -177,8 +172,7 @@ namespace NeuralBattalion.Player
                 return;
             }
             
-            bool fired = weapon.Fire(transform.position, transform.up, true);
-            Debug.Log($"[PlayerController] Weapon.Fire() returned: {fired}");
+            weapon.Fire(transform.position, transform.up, true);
 
             EventBus.Publish(new ProjectileFiredEvent
             {
