@@ -182,10 +182,28 @@ namespace NeuralBattalion.Player
         /// </summary>
         private void UpdateSpriteDirection(TankSpriteManager.Direction direction)
         {
-            if (directionalSprites == null || spriteRenderer == null) return;
+            if (directionalSprites == null)
+            {
+                Debug.LogError("[PlayerController] UpdateSpriteDirection: directionalSprites is NULL!");
+                return;
+            }
+            
+            if (spriteRenderer == null)
+            {
+                Debug.LogError("[PlayerController] UpdateSpriteDirection: spriteRenderer is NULL!");
+                return;
+            }
 
             currentDirection = direction;
-            spriteRenderer.sprite = directionalSprites.GetSprite(direction);
+            Sprite sprite = directionalSprites.GetSprite(direction);
+            if (sprite == null)
+            {
+                Debug.LogError($"[PlayerController] UpdateSpriteDirection: Got NULL sprite for direction {direction}!");
+                return;
+            }
+            
+            spriteRenderer.sprite = sprite;
+            Debug.Log($"[PlayerController] Updated sprite to direction {direction}");
         }
 
         /// <summary>
@@ -217,9 +235,15 @@ namespace NeuralBattalion.Player
 
                 // Update sprite direction based on facing
                 TankSpriteManager.Direction newDirection = TankSpriteManager.GetDirectionFromVector(snappedDirection);
+                Debug.Log($"[PlayerController] Move: snappedDirection={snappedDirection}, newDirection={newDirection}, currentDirection={currentDirection}");
                 if (newDirection != currentDirection)
                 {
+                    Debug.Log($"[PlayerController] Direction changed from {currentDirection} to {newDirection}, calling UpdateSpriteDirection");
                     UpdateSpriteDirection(newDirection);
+                }
+                else
+                {
+                    Debug.Log($"[PlayerController] Direction unchanged, staying at {currentDirection}");
                 }
 
                 // Calculate intended movement
