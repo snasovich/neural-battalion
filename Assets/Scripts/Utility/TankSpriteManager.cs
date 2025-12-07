@@ -143,94 +143,94 @@ namespace NeuralBattalion.Utility
 
         /// <summary>
         /// Draw tank facing up.
+        /// Simple full-square design for clearer collision.
         /// </summary>
         private static void DrawTankUp(Texture2D texture, int size, Color color, Color darkerColor, Color lighterColor)
         {
             int center = size / 2;
-            int bodyWidth = size * 7 / 10;
-            int bodyHeight = size * 6 / 10;
-            int turretWidth = size * 3 / 10;
-            int turretHeight = size * 5 / 10;
+            int fullSize = size - 2; // Leave 1px border for clarity
+            int gunWidth = size / 4;
+            int gunHeight = size / 3;
 
-            // Draw tank body (main rectangle)
-            DrawRect(texture, center - bodyWidth / 2, center - bodyHeight / 4, bodyWidth, bodyHeight, color);
+            // Draw full square tank body
+            DrawRect(texture, 1, 1, fullSize, fullSize, color);
             
-            // Draw tracks (darker rectangles on sides)
-            int trackWidth = size / 8;
-            DrawRect(texture, center - bodyWidth / 2 - 1, center - bodyHeight / 4, trackWidth, bodyHeight, darkerColor);
-            DrawRect(texture, center + bodyWidth / 2 - trackWidth + 1, center - bodyHeight / 4, trackWidth, bodyHeight, darkerColor);
+            // Draw tracks on sides (darker stripes)
+            int trackWidth = size / 6;
+            DrawRect(texture, 2, 1, trackWidth, fullSize, darkerColor);
+            DrawRect(texture, size - trackWidth - 2, 1, trackWidth, fullSize, darkerColor);
 
-            // Draw turret/gun (pointing up)
-            DrawRect(texture, center - turretWidth / 2, center, turretWidth, turretHeight, lighterColor);
+            // Draw gun barrel (pointing up) - black for high contrast
+            DrawRect(texture, center - gunWidth / 2, 1, gunWidth, gunHeight, lighterColor);
         }
 
         /// <summary>
         /// Draw tank facing right.
+        /// Simple full-square design for clearer collision.
         /// </summary>
         private static void DrawTankRight(Texture2D texture, int size, Color color, Color darkerColor, Color lighterColor)
         {
             int center = size / 2;
-            int bodyWidth = size * 6 / 10;
-            int bodyHeight = size * 7 / 10;
-            int turretWidth = size * 5 / 10;
-            int turretHeight = size * 3 / 10;
+            int fullSize = size - 2; // Leave 1px border for clarity
+            int gunWidth = size / 3;
+            int gunHeight = size / 4;
 
-            // Draw tank body
-            DrawRect(texture, center - bodyWidth / 4, center - bodyHeight / 2, bodyWidth, bodyHeight, color);
+            // Draw full square tank body
+            DrawRect(texture, 1, 1, fullSize, fullSize, color);
             
-            // Draw tracks (darker rectangles on top and bottom)
-            int trackHeight = size / 8;
-            DrawRect(texture, center - bodyWidth / 4, center - bodyHeight / 2 - 1, bodyWidth, trackHeight, darkerColor);
-            DrawRect(texture, center - bodyWidth / 4, center + bodyHeight / 2 - trackHeight + 1, bodyWidth, trackHeight, darkerColor);
+            // Draw tracks on top and bottom (darker stripes)
+            int trackHeight = size / 6;
+            DrawRect(texture, 1, 2, fullSize, trackHeight, darkerColor);
+            DrawRect(texture, 1, size - trackHeight - 2, fullSize, trackHeight, darkerColor);
 
-            // Draw turret/gun (pointing right)
-            DrawRect(texture, center, center - turretHeight / 2, turretWidth, turretHeight, lighterColor);
+            // Draw gun barrel (pointing right) - black for high contrast
+            DrawRect(texture, size - gunWidth - 1, center - gunHeight / 2, gunWidth, gunHeight, lighterColor);
         }
 
         /// <summary>
         /// Draw tank facing down.
+        /// Simple full-square design for clearer collision.
         /// </summary>
         private static void DrawTankDown(Texture2D texture, int size, Color color, Color darkerColor, Color lighterColor)
         {
             int center = size / 2;
-            int bodyWidth = size * 7 / 10;
-            int bodyHeight = size * 6 / 10;
-            int turretWidth = size * 3 / 10;
-            int turretHeight = size * 5 / 10;
+            int fullSize = size - 2; // Leave 1px border for clarity
+            int gunWidth = size / 4;
+            int gunHeight = size / 3;
 
-            // Draw tank body
-            DrawRect(texture, center - bodyWidth / 2, center - bodyHeight / 4, bodyWidth, bodyHeight, color);
+            // Draw full square tank body
+            DrawRect(texture, 1, 1, fullSize, fullSize, color);
             
-            // Draw tracks (darker rectangles on sides)
-            int trackWidth = size / 8;
-            DrawRect(texture, center - bodyWidth / 2 - 1, center - bodyHeight / 4, trackWidth, bodyHeight, darkerColor);
-            DrawRect(texture, center + bodyWidth / 2 - trackWidth + 1, center - bodyHeight / 4, trackWidth, bodyHeight, darkerColor);
+            // Draw tracks on sides (darker stripes)
+            int trackWidth = size / 6;
+            DrawRect(texture, 2, 1, trackWidth, fullSize, darkerColor);
+            DrawRect(texture, size - trackWidth - 2, 1, trackWidth, fullSize, darkerColor);
 
-            // Draw turret/gun (pointing down)
-            DrawRect(texture, center - turretWidth / 2, center - turretHeight, turretWidth, turretHeight, lighterColor);
+            // Draw gun barrel (pointing down) - black for high contrast
+            DrawRect(texture, center - gunWidth / 2, size - gunHeight - 1, gunWidth, gunHeight, lighterColor);
         }
 
         /// <summary>
         /// Draw tank facing left.
+        /// Simple full-square design for clearer collision.
         /// </summary>
         private static void DrawTankLeft(Texture2D texture, int size, Color color, Color darkerColor, Color lighterColor)
         {
             int center = size / 2;
-            int bodyWidth = size * 6 / 10;
-            int bodyHeight = size * 7 / 10;
-            int turretWidth = size * 5 / 10;
-            int turretHeight = size * 3 / 10;
+            int fullSize = size - 2; // Leave 1px border for clarity
+            int gunWidth = size / 3;
+            int gunHeight = size / 4;
 
-            // Draw tank body
-            DrawRect(texture, center - bodyWidth / 4, center - bodyHeight / 2, bodyWidth, bodyHeight, color);
+            // Draw full square tank body
+            DrawRect(texture, 1, 1, fullSize, fullSize, color);
             
-            // Draw tracks (darker rectangles on top and bottom)
-            int trackHeight = size / 8;
-            DrawRect(texture, center - bodyWidth / 4, center - bodyHeight / 2 - 1, bodyWidth, trackHeight, darkerColor);
-            DrawRect(texture, center - bodyWidth / 4, center + bodyHeight / 2 - trackHeight + 1, bodyWidth, trackHeight, darkerColor);
+            // Draw tracks on top and bottom (darker stripes)
+            int trackHeight = size / 6;
+            DrawRect(texture, 1, 2, fullSize, trackHeight, darkerColor);
+            DrawRect(texture, 1, size - trackHeight - 2, fullSize, trackHeight, darkerColor);
 
-            // Draw turret/gun (pointing left)
-            DrawRect(texture, center - turretWidth, center - turretHeight / 2, turretWidth, turretHeight, lighterColor);
+            // Draw gun barrel (pointing left) - black for high contrast
+            DrawRect(texture, 1, center - gunHeight / 2, gunWidth, gunHeight, lighterColor);
         }
 
         /// <summary>

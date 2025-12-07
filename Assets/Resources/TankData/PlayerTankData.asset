@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   tankName: Player Tank
   tankSprite: {fileID: 0}
-  tankColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  tankColor: {r: 1, g: 0.85, b: 0, a: 1}
   moveSpeed: 5
   rotationSpeed: 360
   health: 1
