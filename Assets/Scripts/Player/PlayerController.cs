@@ -73,6 +73,10 @@ namespace NeuralBattalion.Player
             rb.gravityScale = 0f; // 2D top-down, no gravity
             rb.freezeRotation = true;
             rb.bodyType = RigidbodyType2D.Kinematic; // Prevent physics-based pushing
+            
+            // Keep transform rotation at zero - directional sprites handle visual direction
+            transform.rotation = Quaternion.identity;
+            rb.rotation = 0f;
 
             if (tankData != null)
             {
@@ -218,12 +222,6 @@ namespace NeuralBattalion.Player
                     UpdateSpriteDirection(newDirection);
                 }
 
-                // Rotate to face movement direction (for transform.up to be used in shooting)
-                float targetAngle = Mathf.Atan2(snappedDirection.y, snappedDirection.x) * Mathf.Rad2Deg - 90f;
-                float currentAngle = rb.rotation;
-                float newAngle = Mathf.MoveTowardsAngle(currentAngle, targetAngle, rotationSpeed * Time.fixedDeltaTime);
-                rb.MoveRotation(newAngle);
-
                 // Calculate intended movement
                 Vector2 movement = snappedDirection * moveSpeed * speedModifier * Time.fixedDeltaTime;
                 Vector2 targetPosition = rb.position + movement;
@@ -347,13 +345,14 @@ namespace NeuralBattalion.Player
                 return;
             }
             
-            weapon.Fire(transform.position, transform.up, true);
+            // Fire in the direction the tank is facing (from lastFacingDirection)
+            weapon.Fire(transform.position, lastFacingDirection, true);
 
             EventBus.Publish(new ProjectileFiredEvent
             {
                 IsPlayer = true,
                 Position = transform.position,
-                Direction = transform.up
+                Direction = lastFacingDirection
             });
         }
 

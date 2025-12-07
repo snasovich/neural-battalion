@@ -55,6 +55,7 @@ namespace NeuralBattalion.Enemy
         private static System.Collections.Generic.Dictionary<GameObject, bool> tankCache = 
             new System.Collections.Generic.Dictionary<GameObject, bool>();
         private Vector2 moveDirection;
+        private Vector2 lastFacingDirection = Vector2.up; // Track facing direction independently
         private float moveSpeed = 3f;
         private float rotationSpeed = 180f;
         private int health = 1;
@@ -76,6 +77,10 @@ namespace NeuralBattalion.Enemy
             rb.gravityScale = 0f;
             rb.freezeRotation = true;
             rb.bodyType = RigidbodyType2D.Kinematic; // Prevent physics-based pushing
+            
+            // Keep transform rotation at zero - directional sprites handle visual direction
+            transform.rotation = Quaternion.identity;
+            rb.rotation = 0f;
 
             // Find sprite renderer if not assigned
             if (spriteRenderer == null)
@@ -260,6 +265,9 @@ namespace NeuralBattalion.Enemy
 
             // Snap to cardinal direction
             Vector2 snappedDirection = SnapToCardinalDirection(moveDirection);
+            
+            // Update facing direction
+            lastFacingDirection = snappedDirection;
 
             // Update sprite direction based on movement
             TankSpriteManager.Direction newDirection = TankSpriteManager.GetDirectionFromVector(snappedDirection);
@@ -267,12 +275,6 @@ namespace NeuralBattalion.Enemy
             {
                 UpdateSpriteDirection(newDirection);
             }
-
-            // Rotate to face movement direction (for transform.up to be used in shooting)
-            float targetAngle = Mathf.Atan2(snappedDirection.y, snappedDirection.x) * Mathf.Rad2Deg - 90f;
-            float currentAngle = rb.rotation;
-            float newAngle = Mathf.MoveTowardsAngle(currentAngle, targetAngle, rotationSpeed * Time.fixedDeltaTime);
-            rb.MoveRotation(newAngle);
 
             // Calculate intended movement
             Vector2 movement = snappedDirection * moveSpeed * Time.fixedDeltaTime;
@@ -384,13 +386,14 @@ namespace NeuralBattalion.Enemy
             if (Time.time - lastShotTime < fireRate) return false;
 
             lastShotTime = Time.time;
-            weapon?.Fire(transform.position, transform.up, false);
+            // Fire in the direction the tank is facing (from lastFacingDirection)
+            weapon?.Fire(transform.position, lastFacingDirection, false);
 
             EventBus.Publish(new ProjectileFiredEvent
             {
                 IsPlayer = false,
                 Position = transform.position,
-                Direction = transform.up
+                Direction = lastFacingDirection
             });
 
             return true;
