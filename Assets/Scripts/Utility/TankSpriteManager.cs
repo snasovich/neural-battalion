@@ -71,13 +71,9 @@ namespace NeuralBattalion.Utility
         private static Sprite CreateTankSprite(Color color, Direction direction, int size)
         {
             Texture2D texture = new Texture2D(size, size);
-            Color darkerColor = new Color(color.r * 0.6f, color.g * 0.6f, color.b * 0.6f, color.a);
-            Color lighterColor = new Color(
-                Mathf.Min(color.r * 1.2f, 1f),
-                Mathf.Min(color.g * 1.2f, 1f),
-                Mathf.Min(color.b * 1.2f, 1f),
-                color.a
-            );
+            Color darkerColor = new Color(color.r * 0.4f, color.g * 0.4f, color.b * 0.4f, color.a);
+            // Make the gun/turret much more visible - use black for high contrast
+            Color lighterColor = Color.black;
 
             // Fill with transparent pixels
             for (int y = 0; y < size; y++)
