@@ -41,7 +41,12 @@ namespace NeuralBattalion.Player
 
         private Rigidbody2D rb;
         private TerrainManager terrainManager;
+        private LevelBoundary levelBoundary;
         private Collider2D[] overlapBuffer = new Collider2D[OVERLAP_BUFFER_SIZE];
+        
+        // Directional sprites
+        private TankSpriteManager.DirectionalSprites directionalSprites;
+        private TankSpriteManager.Direction currentDirection = TankSpriteManager.Direction.Up;
         
         // Cache for tank component checks
         // Note: This cache grows as new tanks are encountered. In typical gameplay with limited tanks,
@@ -50,6 +55,7 @@ namespace NeuralBattalion.Player
         private static System.Collections.Generic.Dictionary<GameObject, bool> tankCache = 
             new System.Collections.Generic.Dictionary<GameObject, bool>();
         private Vector2 moveDirection;
+        private Vector2 lastFacingDirection = Vector2.up; // Track facing direction independently
         private bool canShoot = true;
         private float lastShotTime;
         private bool isInvulnerable;
@@ -67,6 +73,10 @@ namespace NeuralBattalion.Player
             rb.gravityScale = 0f; // 2D top-down, no gravity
             rb.freezeRotation = true;
             rb.bodyType = RigidbodyType2D.Kinematic; // Prevent physics-based pushing
+            
+            // Keep transform rotation at zero - directional sprites handle visual direction
+            transform.rotation = Quaternion.identity;
+            rb.rotation = 0f;
 
             if (tankData != null)
             {
@@ -87,6 +97,16 @@ namespace NeuralBattalion.Player
             {
                 Debug.LogWarning("[PlayerController] TerrainManager not found - collision detection will be disabled");
             }
+
+            // Find LevelBoundary
+            levelBoundary = FindObjectOfType<LevelBoundary>();
+            if (levelBoundary == null)
+            {
+                Debug.LogWarning("[PlayerController] LevelBoundary not found - boundary collision will be disabled");
+            }
+
+            // Create directional sprites
+            CreateDirectionalSprites();
 
             EventBus.Publish(new PlayerSpawnedEvent { Lives = playerHealth?.CurrentLives ?? 3 });
         }
@@ -110,6 +130,9 @@ namespace NeuralBattalion.Player
             Move();
         }
 
+        // Track the color used to create sprites
+        private Color currentSpriteColor = Color.clear;
+
         /// <summary>
         /// Apply tank data configuration.
         /// </summary>
@@ -122,6 +145,47 @@ namespace NeuralBattalion.Player
             {
                 weapon.Configure(tankData);
             }
+
+            // Only recreate sprites if they haven't been created or color changed
+            Color newColor = tankData?.TankColor ?? Color.green;
+            bool needsRecreate = directionalSprites == null || currentSpriteColor != newColor;
+            
+            if (needsRecreate)
+            {
+                CreateDirectionalSprites();
+            }
+        }
+
+        /// <summary>
+        /// Create directional sprites for the tank.
+        /// </summary>
+        private void CreateDirectionalSprites()
+        {
+            if (spriteRenderer == null) return;
+
+            // Clean up old sprites before creating new ones
+            if (directionalSprites != null)
+            {
+                TankSpriteManager.DestroyDirectionalSprites(directionalSprites);
+            }
+
+            Color tankColor = tankData?.TankColor ?? Color.green;
+            currentSpriteColor = tankColor;
+            directionalSprites = TankSpriteManager.CreateDirectionalSprites(tankColor, 32);
+
+            // Set initial sprite
+            UpdateSpriteDirection(currentDirection);
+        }
+
+        /// <summary>
+        /// Update the sprite to match the current direction.
+        /// </summary>
+        private void UpdateSpriteDirection(TankSpriteManager.Direction direction)
+        {
+            if (directionalSprites == null || spriteRenderer == null) return;
+
+            currentDirection = direction;
+            spriteRenderer.sprite = directionalSprites.GetSprite(direction);
         }
 
         /// <summary>
@@ -142,25 +206,31 @@ namespace NeuralBattalion.Player
         /// </summary>
         private void Move()
         {
-            if (moveDirection == Vector2.zero) return;
-
-            // Tank moves in 4 directions only (classic Battle City style)
-            Vector2 snappedDirection = SnapToCardinalDirection(moveDirection);
-
-            // Rotate to face movement direction
-            float targetAngle = Mathf.Atan2(snappedDirection.y, snappedDirection.x) * Mathf.Rad2Deg - 90f;
-            float currentAngle = rb.rotation;
-            float newAngle = Mathf.MoveTowardsAngle(currentAngle, targetAngle, rotationSpeed * Time.fixedDeltaTime);
-            rb.MoveRotation(newAngle);
-
-            // Calculate intended movement
-            Vector2 movement = snappedDirection * moveSpeed * speedModifier * Time.fixedDeltaTime;
-            Vector2 targetPosition = rb.position + movement;
-
-            // Check if movement is valid (no terrain or tank collision)
-            if (CanMoveTo(targetPosition))
+            // Always update facing direction if there's input, even if not moving
+            if (moveDirection != Vector2.zero)
             {
-                rb.MovePosition(targetPosition);
+                // Tank moves in 4 directions only (classic Battle City style)
+                Vector2 snappedDirection = SnapToCardinalDirection(moveDirection);
+                
+                // Update facing direction
+                lastFacingDirection = snappedDirection;
+
+                // Update sprite direction based on facing
+                TankSpriteManager.Direction newDirection = TankSpriteManager.GetDirectionFromVector(snappedDirection);
+                if (newDirection != currentDirection)
+                {
+                    UpdateSpriteDirection(newDirection);
+                }
+
+                // Calculate intended movement
+                Vector2 movement = snappedDirection * moveSpeed * speedModifier * Time.fixedDeltaTime;
+                Vector2 targetPosition = rb.position + movement;
+
+                // Check if movement is valid (no terrain, tank collision, or boundary)
+                if (CanMoveTo(targetPosition))
+                {
+                    rb.MovePosition(targetPosition);
+                }
             }
         }
 
@@ -171,6 +241,15 @@ namespace NeuralBattalion.Player
         /// <returns>True if the position is valid.</returns>
         private bool CanMoveTo(Vector2 targetPosition)
         {
+            // Check level boundaries
+            if (levelBoundary != null)
+            {
+                if (!levelBoundary.IsTankWithinBounds(targetPosition, collisionCheckRadius * 2))
+                {
+                    return false;
+                }
+            }
+
             // Check terrain collision for tank-sized area
             if (terrainManager != null)
             {
@@ -266,13 +345,14 @@ namespace NeuralBattalion.Player
                 return;
             }
             
-            weapon.Fire(transform.position, transform.up, true);
+            // Fire in the direction the tank is facing (from lastFacingDirection)
+            weapon.Fire(transform.position, lastFacingDirection, true);
 
             EventBus.Publish(new ProjectileFiredEvent
             {
                 IsPlayer = true,
                 Position = transform.position,
-                Direction = transform.up
+                Direction = lastFacingDirection
             });
         }
 
@@ -360,6 +440,19 @@ namespace NeuralBattalion.Player
             ApplyShield(3f);
 
             EventBus.Publish(new PlayerRespawnEvent { RemainingLives = playerHealth?.CurrentLives ?? 0 });
+        }
+
+        /// <summary>
+        /// Clean up resources when destroyed.
+        /// </summary>
+        private void OnDestroy()
+        {
+            // Clean up directional sprites to prevent memory leaks
+            if (directionalSprites != null)
+            {
+                TankSpriteManager.DestroyDirectionalSprites(directionalSprites);
+                directionalSprites = null;
+            }
         }
     }
 }

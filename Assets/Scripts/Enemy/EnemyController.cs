@@ -41,7 +41,12 @@ namespace NeuralBattalion.Enemy
 
         private Rigidbody2D rb;
         private TerrainManager terrainManager;
+        private LevelBoundary levelBoundary;
         private Collider2D[] overlapBuffer = new Collider2D[OVERLAP_BUFFER_SIZE];
+        
+        // Directional sprites
+        private TankSpriteManager.DirectionalSprites directionalSprites;
+        private TankSpriteManager.Direction currentDirection = TankSpriteManager.Direction.Up;
         
         // Cache for tank component checks
         // Note: This cache grows as new tanks are encountered. In typical gameplay with limited tanks,
@@ -50,6 +55,7 @@ namespace NeuralBattalion.Enemy
         private static System.Collections.Generic.Dictionary<GameObject, bool> tankCache = 
             new System.Collections.Generic.Dictionary<GameObject, bool>();
         private Vector2 moveDirection;
+        private Vector2 lastFacingDirection = Vector2.up; // Track facing direction independently
         private float moveSpeed = 3f;
         private float rotationSpeed = 180f;
         private int health = 1;
@@ -71,6 +77,10 @@ namespace NeuralBattalion.Enemy
             rb.gravityScale = 0f;
             rb.freezeRotation = true;
             rb.bodyType = RigidbodyType2D.Kinematic; // Prevent physics-based pushing
+            
+            // Keep transform rotation at zero - directional sprites handle visual direction
+            transform.rotation = Quaternion.identity;
+            rb.rotation = 0f;
 
             // Find sprite renderer if not assigned
             if (spriteRenderer == null)
@@ -96,6 +106,13 @@ namespace NeuralBattalion.Enemy
             if (terrainManager == null)
             {
                 Debug.LogWarning("[EnemyController] TerrainManager not found - collision detection will be disabled");
+            }
+
+            // Find LevelBoundary
+            levelBoundary = FindObjectOfType<LevelBoundary>();
+            if (levelBoundary == null)
+            {
+                Debug.LogWarning("[EnemyController] LevelBoundary not found - boundary collision will be disabled");
             }
         }
 
@@ -133,6 +150,9 @@ namespace NeuralBattalion.Enemy
             EventBus.Publish(new EnemySpawnedEvent { EnemyId = enemyId, EnemyType = enemyType });
         }
 
+        // Track the color used to create sprites
+        private Color currentSpriteColor = Color.clear;
+
         /// <summary>
         /// Apply tank data configuration.
         /// </summary>
@@ -144,25 +164,55 @@ namespace NeuralBattalion.Enemy
             health = maxHealth;
             scoreValue = tankData.ScoreValue;
 
-            // Apply visual properties
+            // Apply visual properties and create directional sprites
             if (spriteRenderer != null)
             {
-                if (tankData.TankSprite != null)
+                // Only recreate sprites if they haven't been created or color changed
+                Color newColor = tankData?.TankColor ?? Color.red;
+                bool needsRecreate = directionalSprites == null || currentSpriteColor != newColor;
+                
+                if (needsRecreate)
                 {
-                    spriteRenderer.sprite = tankData.TankSprite;
+                    CreateDirectionalSprites();
                 }
-                else
-                {
-                    // Create a simple colored sprite if no sprite is provided
-                    spriteRenderer.sprite = CreateSimpleSprite();
-                }
-                spriteRenderer.color = tankData.TankColor;
             }
 
             if (weapon != null)
             {
                 weapon.Configure(tankData);
             }
+        }
+
+        /// <summary>
+        /// Create directional sprites for the tank.
+        /// </summary>
+        private void CreateDirectionalSprites()
+        {
+            if (spriteRenderer == null) return;
+
+            // Clean up old sprites before creating new ones
+            if (directionalSprites != null)
+            {
+                TankSpriteManager.DestroyDirectionalSprites(directionalSprites);
+            }
+
+            Color tankColor = tankData?.TankColor ?? Color.red;
+            currentSpriteColor = tankColor;
+            directionalSprites = TankSpriteManager.CreateDirectionalSprites(tankColor, 32);
+
+            // Set initial sprite
+            UpdateSpriteDirection(currentDirection);
+        }
+
+        /// <summary>
+        /// Update the sprite to match the current direction.
+        /// </summary>
+        private void UpdateSpriteDirection(TankSpriteManager.Direction direction)
+        {
+            if (directionalSprites == null || spriteRenderer == null) return;
+
+            currentDirection = direction;
+            spriteRenderer.sprite = directionalSprites.GetSprite(direction);
         }
 
         /// <summary>
@@ -215,18 +265,22 @@ namespace NeuralBattalion.Enemy
 
             // Snap to cardinal direction
             Vector2 snappedDirection = SnapToCardinalDirection(moveDirection);
+            
+            // Update facing direction
+            lastFacingDirection = snappedDirection;
 
-            // Rotate to face movement direction
-            float targetAngle = Mathf.Atan2(snappedDirection.y, snappedDirection.x) * Mathf.Rad2Deg - 90f;
-            float currentAngle = rb.rotation;
-            float newAngle = Mathf.MoveTowardsAngle(currentAngle, targetAngle, rotationSpeed * Time.fixedDeltaTime);
-            rb.MoveRotation(newAngle);
+            // Update sprite direction based on movement
+            TankSpriteManager.Direction newDirection = TankSpriteManager.GetDirectionFromVector(snappedDirection);
+            if (newDirection != currentDirection)
+            {
+                UpdateSpriteDirection(newDirection);
+            }
 
             // Calculate intended movement
             Vector2 movement = snappedDirection * moveSpeed * Time.fixedDeltaTime;
             Vector2 targetPosition = rb.position + movement;
 
-            // Check if movement is valid (no terrain or tank collision)
+            // Check if movement is valid (no terrain, tank collision, or boundary)
             if (CanMoveTo(targetPosition))
             {
                 rb.MovePosition(targetPosition);
@@ -240,6 +294,15 @@ namespace NeuralBattalion.Enemy
         /// <returns>True if the position is valid.</returns>
         private bool CanMoveTo(Vector2 targetPosition)
         {
+            // Check level boundaries
+            if (levelBoundary != null)
+            {
+                if (!levelBoundary.IsTankWithinBounds(targetPosition, collisionCheckRadius * 2))
+                {
+                    return false;
+                }
+            }
+
             // Check terrain collision for tank-sized area
             if (terrainManager != null)
             {
@@ -323,13 +386,14 @@ namespace NeuralBattalion.Enemy
             if (Time.time - lastShotTime < fireRate) return false;
 
             lastShotTime = Time.time;
-            weapon?.Fire(transform.position, transform.up, false);
+            // Fire in the direction the tank is facing (from lastFacingDirection)
+            weapon?.Fire(transform.position, lastFacingDirection, false);
 
             EventBus.Publish(new ProjectileFiredEvent
             {
                 IsPlayer = false,
                 Position = transform.position,
-                Direction = transform.up
+                Direction = lastFacingDirection
             });
 
             return true;
@@ -414,6 +478,19 @@ namespace NeuralBattalion.Enemy
         public float GetHealthPercentage()
         {
             return (float)health / maxHealth;
+        }
+
+        /// <summary>
+        /// Clean up resources when destroyed.
+        /// </summary>
+        private void OnDestroy()
+        {
+            // Clean up directional sprites to prevent memory leaks
+            if (directionalSprites != null)
+            {
+                TankSpriteManager.DestroyDirectionalSprites(directionalSprites);
+                directionalSprites = null;
+            }
         }
     }
 }
