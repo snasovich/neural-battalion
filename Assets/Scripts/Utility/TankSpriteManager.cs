@@ -161,7 +161,8 @@ namespace NeuralBattalion.Utility
             DrawRect(texture, size - trackWidth - 2, 1, trackWidth, fullSize, darkerColor);
 
             // Draw gun barrel (pointing up) - black for high contrast
-            DrawRect(texture, center - gunWidth / 2, 1, gunWidth, gunHeight, lighterColor);
+            // In Texture2D, Y=0 is bottom, so high Y value = top of sprite = up direction
+            DrawRect(texture, center - gunWidth / 2, size - gunHeight - 1, gunWidth, gunHeight, lighterColor);
         }
 
         /// <summary>
@@ -207,7 +208,8 @@ namespace NeuralBattalion.Utility
             DrawRect(texture, size - trackWidth - 2, 1, trackWidth, fullSize, darkerColor);
 
             // Draw gun barrel (pointing down) - black for high contrast
-            DrawRect(texture, center - gunWidth / 2, size - gunHeight - 1, gunWidth, gunHeight, lighterColor);
+            // In Texture2D, Y=0 is bottom, so low Y value = bottom of sprite = down direction
+            DrawRect(texture, center - gunWidth / 2, 1, gunWidth, gunHeight, lighterColor);
         }
 
         /// <summary>
